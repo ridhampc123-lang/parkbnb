@@ -8,18 +8,19 @@ import { getSupabaseConfigStatus } from './config';
  */
 export function getSupabaseServiceRoleClient() {
   const config = getSupabaseConfigStatus();
-  if (!config.hasServiceRoleKey || !config.hasUrl) {
+  if (!config.hasServiceRoleKey) {
     return null;
   }
 
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
+  if (!url || !secretKey) return null;
+
+  return createClient(url, secretKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
