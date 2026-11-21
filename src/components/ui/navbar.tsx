@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getServerSession } from '@/lib/auth/session';
 import { logoutAction } from '@/server/actions/auth-actions';
-import { Car, MapPin, User, ShieldCheck, LayoutDashboard, LogOut, PlusCircle } from 'lucide-react';
+import { Car, MapPin, User, LayoutDashboard, LogOut, PlusCircle, ShieldCheck } from 'lucide-react';
 
 export async function Navbar() {
   const session = await getServerSession();
@@ -19,7 +19,7 @@ export async function Navbar() {
             <span className="text-[11px] font-semibold bg-primary-soft text-primary px-2 py-0.5 rounded-full uppercase tracking-wider ml-1">Ahmedabad</span>
           </Link>
 
-          {/* Center Navigation */}
+          {/* Center Public Navigation - strictly consumer-facing */}
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-foreground">
             <Link href="/search" className="hover:text-primary transition-colors flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-primary" />
@@ -32,8 +32,7 @@ export async function Navbar() {
               <PlusCircle className="w-4 h-4" />
               List Your Space
             </Link>
-            <Link href="/safety-and-trust" className="hover:text-primary transition-colors flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <Link href="/safety-and-trust" className="hover:text-primary transition-colors">
               Safety & Trust
             </Link>
           </nav>
@@ -42,15 +41,7 @@ export async function Navbar() {
           <div className="flex items-center space-x-3">
             {session.isAuthenticated ? (
               <div className="flex items-center gap-3">
-                {session.role === 'admin' && (
-                  <Link
-                    href="/admin"
-                    className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-control bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition-colors"
-                  >
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    Admin Operations
-                  </Link>
-                )}
+                {/* Provider portal shortcut if provider */}
                 {session.role === 'provider' && (
                   <Link
                     href="/host"
@@ -60,6 +51,18 @@ export async function Navbar() {
                     Host Portal
                   </Link>
                 )}
+
+                {/* Admin console shortcut ONLY for authenticated admins */}
+                {session.role === 'admin' && (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-control bg-slate-900 text-white hover:bg-slate-800 transition-colors shadow-sm"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                    <span>Admin Console</span>
+                  </Link>
+                )}
+
                 <Link
                   href="/account"
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-control border border-border hover:bg-surface-muted transition-colors"
@@ -67,6 +70,7 @@ export async function Navbar() {
                   <User className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>{session.profile?.full_name?.split(' ')[0] || 'My Account'}</span>
                 </Link>
+
                 <form action={logoutAction}>
                   <button
                     type="submit"
