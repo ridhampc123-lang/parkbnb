@@ -1,14 +1,32 @@
 -- ============================================================================
--- SQL Script: Create an Admin User with Email & Password Directly
+-- SQL Script: Create an Admin User with Email & Password in Supabase
 -- Run this in your Supabase Dashboard > SQL Editor:
 -- https://supabase.com/dashboard/project/vfgagycdlphosxkjfxuv/sql
 -- ============================================================================
 
+-- Step 1: Ensure required extensions and tables exist
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+DO $$ BEGIN
+  CREATE TYPE user_role AS ENUM ('customer', 'provider', 'admin', 'super_admin');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name text NOT NULL,
+  email text UNIQUE NOT NULL,
+  phone text,
+  phone_verified boolean NOT NULL DEFAULT false,
+  role user_role NOT NULL DEFAULT 'customer',
+  avatar_url text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Step 2: Create or update Admin credentials
 DO $$
 DECLARE
-  -- >>> SET YOUR DESIRED ADMIN CREDENTIALS HERE <<<
+  -- >>> CONFIGURE YOUR ADMIN CREDENTIALS HERE <<<
   v_email text := 'admin@parkbnb.in';
   v_password text := 'Admin@12345';
   v_full_name text := 'ParkBnB Admin';
@@ -16,11 +34,10 @@ DECLARE
 
   v_user_id uuid;
 BEGIN
-  -- 1. Check if user already exists in auth.users
+  -- Check if user already exists in auth.users
   SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
 
   IF v_user_id IS NULL THEN
-    -- Generate fresh user UUID
     v_user_id := gen_random_uuid();
 
     -- Create user in Supabase auth.users with encrypted bcrypt password
@@ -59,7 +76,7 @@ BEGIN
     WHERE id = v_user_id;
   END IF;
 
-  -- 2. Ensure public.profiles table has the user with role = 'admin'
+  -- Ensure public.profiles table has the user with role = 'admin'
   INSERT INTO public.profiles (
     id,
     full_name,
@@ -87,7 +104,7 @@ BEGIN
   RAISE NOTICE 'SUCCESS: Admin user configured. Email: %, Password: %', v_email, v_password;
 END $$;
 
--- Verify admin account created:
+-- Step 3: Verify the admin account was created
 SELECT id, full_name, email, role, created_at 
 FROM public.profiles 
 WHERE email = 'admin@parkbnb.in';
