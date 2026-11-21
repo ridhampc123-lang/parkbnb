@@ -1,12 +1,21 @@
 -- ============================================================================
--- SQL Script: Create an Admin User with Email & Password in Supabase
+-- SQL Script: Fix Supabase Auth "Database error querying schema" & Configure Admin
 -- Run this in your Supabase Dashboard > SQL Editor:
 -- https://supabase.com/dashboard/project/vfgagycdlphosxkjfxuv/sql
 -- ============================================================================
 
--- Step 1: Ensure required extensions and tables exist
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Step 1: Fix any NULL token columns in auth.users (fixes "Database error querying schema")
+UPDATE auth.users
+SET 
+  confirmation_token = COALESCE(confirmation_token, ''),
+  email_change = COALESCE(email_change, ''),
+  email_change_token_new = COALESCE(email_change_token_new, ''),
+  recovery_token = COALESCE(recovery_token, ''),
+  phone_change = COALESCE(phone_change, ''),
+  phone_change_token = COALESCE(phone_change_token, ''),
+  email_change_token_current = COALESCE(email_change_token_current, '');
 
+-- Step 2: Ensure public.profiles table exists with role enum
 DO $$ BEGIN
   CREATE TYPE user_role AS ENUM ('customer', 'provider', 'admin', 'super_admin');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -23,88 +32,32 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Step 2: Create or update Admin credentials
-DO $$
-DECLARE
-  -- >>> CONFIGURE YOUR ADMIN CREDENTIALS HERE <<<
-  v_email text := 'admin@parkbnb.in';
-  v_password text := 'Admin@12345';
-  v_full_name text := 'ParkBnB Admin';
-  v_phone text := '9876543210';
+-- Step 3: Link or promote user in public.profiles to 'admin'
+-- If user already exists in auth.users (e.g. admin@parkbnb.in or your email), set them to admin:
+INSERT INTO public.profiles (
+  id,
+  full_name,
+  email,
+  role,
+  phone_verified,
+  created_at,
+  updated_at
+)
+SELECT 
+  id,
+  COALESCE(raw_user_meta_data->>'full_name', 'ParkBnB Admin'),
+  email,
+  'admin'::user_role,
+  true,
+  now(),
+  now()
+FROM auth.users
+WHERE email = 'admin@parkbnb.in'
+ON CONFLICT (id) DO UPDATE
+SET role = 'admin',
+    updated_at = now();
 
-  v_user_id uuid;
-BEGIN
-  -- Check if user already exists in auth.users
-  SELECT id INTO v_user_id FROM auth.users WHERE email = v_email;
-
-  IF v_user_id IS NULL THEN
-    v_user_id := gen_random_uuid();
-
-    -- Create user in Supabase auth.users with encrypted bcrypt password
-    INSERT INTO auth.users (
-      id,
-      instance_id,
-      email,
-      encrypted_password,
-      email_confirmed_at,
-      raw_app_meta_data,
-      raw_user_meta_data,
-      created_at,
-      updated_at,
-      role,
-      aud
-    )
-    VALUES (
-      v_user_id,
-      '00000000-0000-0000-0000-000000000000',
-      v_email,
-      crypt(v_password, gen_salt('bf')),
-      now(),
-      jsonb_build_object('provider', 'email', 'providers', array['email']),
-      jsonb_build_object('full_name', v_full_name, 'role', 'admin'),
-      now(),
-      now(),
-      'authenticated',
-      'authenticated'
-    );
-  ELSE
-    -- If user already exists, update their password & confirm email
-    UPDATE auth.users
-    SET encrypted_password = crypt(v_password, gen_salt('bf')),
-        email_confirmed_at = COALESCE(email_confirmed_at, now()),
-        updated_at = now()
-    WHERE id = v_user_id;
-  END IF;
-
-  -- Ensure public.profiles table has the user with role = 'admin'
-  INSERT INTO public.profiles (
-    id,
-    full_name,
-    email,
-    phone,
-    phone_verified,
-    role,
-    created_at,
-    updated_at
-  )
-  VALUES (
-    v_user_id,
-    v_full_name,
-    v_email,
-    v_phone,
-    true,
-    'admin',
-    now(),
-    now()
-  )
-  ON CONFLICT (id) DO UPDATE
-  SET role = 'admin',
-      updated_at = now();
-
-  RAISE NOTICE 'SUCCESS: Admin user configured. Email: %, Password: %', v_email, v_password;
-END $$;
-
--- Step 3: Verify the admin account was created
+-- Step 4: Verify the admin profile
 SELECT id, full_name, email, role, created_at 
 FROM public.profiles 
-WHERE email = 'admin@parkbnb.in';
+WHERE role IN ('admin', 'super_admin');
