@@ -23,14 +23,13 @@ export default function LoginPage() {
       setError(result.error);
       setLoading(false);
     } else if (result?.success) {
-      if (result.role === 'admin') {
-        router.push('/admin');
+      if (result.role === 'admin' || result.role === 'super_admin') {
+        window.location.href = '/admin';
       } else if (result.role === 'provider') {
-        router.push('/host');
+        window.location.href = '/host';
       } else {
-        router.push('/account');
+        window.location.href = '/account';
       }
-      router.refresh();
     }
   }
 
@@ -92,11 +91,18 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="text-center pt-2 border-t border-border/80 text-xs text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="font-semibold text-primary hover:underline">
-            Register here
-          </Link>
+        <div className="text-center pt-2 border-t border-border/80 text-xs text-muted-foreground space-y-2">
+          <div>
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="font-semibold text-primary hover:underline">
+              Register here
+            </Link>
+          </div>
+          <div className="pt-1">
+            <Link href="/admin/login" className="inline-flex items-center gap-1 font-semibold text-purple-700 hover:text-purple-800 text-[11px] bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-control border border-purple-200 transition-colors">
+              <span>ParkBnB Staff or Administrator? Open Admin Portal &rarr;</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

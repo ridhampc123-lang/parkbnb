@@ -1,19 +1,62 @@
-export type UserRole = 'customer' | 'provider' | 'admin' | 'super_admin';
+export type UserRole =
+  | 'visitor'
+  | 'customer'
+  | 'provider'
+  | 'support_agent'
+  | 'operations_manager'
+  | 'finance_manager'
+  | 'verification_manager'
+  | 'admin'
+  | 'super_admin';
+
 export type ProviderType = 'individual_residential' | 'commercial_operator' | 'authorized_agent';
 export type VehicleType = 'car_sedan' | 'car_suv' | 'car_hatchback' | 'two_wheeler' | 'ev_four_wheeler' | 'ev_two_wheeler';
 export type VerificationStatus = 'draft' | 'submitted' | 'under_review' | 'more_info_needed' | 'approved' | 'rejected' | 'suspended';
-export type BookingStatus = 'hold_pending' | 'confirmed' | 'active' | 'completed' | 'cancelled_by_customer' | 'cancelled_by_provider' | 'cancelled_by_admin' | 'expired' | 'payment_failed' | 'disputed';
+export type BookingStatus =
+  | 'hold_pending'
+  | 'confirmed'
+  | 'active'
+  | 'completed'
+  | 'cancelled_by_customer'
+  | 'cancelled_by_provider'
+  | 'cancelled_by_admin'
+  | 'expired'
+  | 'payment_failed'
+  | 'disputed';
 export type PaymentStatus = 'created' | 'authorized' | 'captured' | 'refunded' | 'partially_refunded' | 'failed';
-export type LedgerEntryType = 'CUSTOMER_PAYMENT' | 'PLATFORM_COMMISSION' | 'PROVIDER_PAYABLE' | 'REFUND_CUSTOMER' | 'COMMISSION_REVERSAL' | 'PROVIDER_PAYOUT' | 'ADJUSTMENT';
+export type LedgerEntryType =
+  | 'CUSTOMER_PAYMENT'
+  | 'PLATFORM_COMMISSION'
+  | 'PROVIDER_PAYABLE'
+  | 'REFUND_CUSTOMER'
+  | 'COMMISSION_REVERSAL'
+  | 'PROVIDER_PAYOUT'
+  | 'ADJUSTMENT';
 
 export interface Profile {
   id: string;
+  customer_public_id?: string | null; // e.g. PBN-C-7K9X4M2Q
   full_name: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   phone_verified: boolean;
+  phone_verified_at?: string | null;
+  last_active_at?: string | null;
   role: UserRole;
   avatar_url?: string | null;
+  status?: 'active' | 'suspended' | 'deleted';
+  preferred_vehicle_id?: string | null;
+  notification_preferences?: {
+    sms: boolean;
+    whatsapp: boolean;
+    email: boolean;
+  };
+  risk_score?: number;
+  privacy_settings?: {
+    marketing_emails?: boolean;
+    in_app_notifications?: boolean;
+    data_retention_days?: number;
+  };
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +74,8 @@ export interface ProviderProfile {
   bank_account_number?: string | null;
   bank_ifsc_code?: string | null;
   bank_account_holder?: string | null;
+  upi_id?: string | null;
+  commission_rate?: number | null; // e.g. 0.15 default
   created_at: string;
   updated_at: string;
 }
@@ -111,6 +156,8 @@ export interface BookingHold {
 export interface Booking {
   id: string;
   booking_reference: string;
+  booking_customer_reference?: string; // e.g. PBN-REF-8M2Q4K9X
+  customer_display_name?: string; // e.g. "Rahul S." (Masked for privacy)
   space_id: string;
   customer_id: string;
   provider_id: string;
@@ -169,6 +216,44 @@ export interface SupportTicket {
   category: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  internal_notes?: string | null;
+  assigned_to?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  operator_email: string;
+  action: string;
+  category: 'auth' | 'verification' | 'user' | 'host' | 'space' | 'booking' | 'payout' | 'dispute' | 'settings' | 'privacy_lookup';
+  target_id?: string;
+  target_name?: string;
+  details: string;
+}
+
+export interface CustomerDataAccessLog {
+  id: string;
+  staff_id: string;
+  staff_role: UserRole;
+  customer_id: string;
+  booking_reference?: string | null;
+  reason: string;
+  fields_accessed: string[];
+  approval_details?: string | null;
+  outcome?: string | null;
+  created_at: string;
+}
+
+export interface PlatformSettings {
+  platformCommissionRate: number; // e.g. 0.15 for 15%
+  gstRate: number; // e.g. 0.18 for 18%
+  temporaryHoldMinutes: number; // e.g. 10
+  cancellationWindowHours: number; // e.g. 2
+  emergencyMaintenanceMode: boolean;
+  instantPayoutsEnabled: boolean;
+  supportHotline: string;
+  supportEmail: string;
+  activeZones: string[];
 }

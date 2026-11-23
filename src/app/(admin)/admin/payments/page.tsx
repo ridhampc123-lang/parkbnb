@@ -17,6 +17,10 @@ export default function AdminPaymentsPage() {
     .filter(e => e.entry_type === 'PROVIDER_PAYABLE')
     .reduce((sum, e) => sum + e.amount, 0);
 
+  const totalProviderPayouts = ledger
+    .filter(e => e.entry_type === 'PROVIDER_PAYOUT')
+    .reduce((sum, e) => sum + e.amount, 0);
+
   const totalRefunds = ledger
     .filter(e => e.entry_type === 'REFUND_CUSTOMER')
     .reduce((sum, e) => sum + e.amount, 0);
@@ -97,7 +101,9 @@ export default function AdminPaymentsPage() {
                       <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                         e.entry_type === 'CUSTOMER_PAYMENT' ? 'bg-blue-500/20 text-blue-300' :
                         e.entry_type === 'PLATFORM_COMMISSION' ? 'bg-emerald-500/20 text-emerald-300' :
-                        e.entry_type === 'PROVIDER_PAYABLE' ? 'bg-amber-500/20 text-amber-300' : 'bg-rose-500/20 text-rose-300'
+                        e.entry_type === 'PROVIDER_PAYABLE' ? 'bg-amber-500/20 text-amber-300' :
+                        e.entry_type === 'PROVIDER_PAYOUT' ? 'bg-purple-500/20 text-purple-300' :
+                        'bg-rose-500/20 text-rose-300'
                       }`}>
                         {e.entry_type}
                       </span>

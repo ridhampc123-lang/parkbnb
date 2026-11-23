@@ -6,6 +6,7 @@ import { loginSchema, registerSchema } from '@/lib/validation/schemas';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 import { Profile, ProviderProfile } from '@/types/database';
+import { signSessionToken } from '@/lib/auth/session-token';
 
 export async function loginAction(formData: FormData) {
   const email = formData.get('email') as string;
@@ -37,13 +38,19 @@ export async function loginAction(formData: FormData) {
     return { error: 'Invalid email or password. Please register if you do not have an account.' };
   }
 
-  // Set session cookie
+  // Set cryptographically signed session cookie (30 days persistent)
   const cookieStore = await cookies();
-  cookieStore.set('parkbnb_auth_token', profile.id, {
+  const { token } = signSessionToken({
+    sub: profile.id,
+    phone: profile.phone,
+    name: profile.full_name,
+    role: profile.role,
+  });
+  cookieStore.set('parkbnb_auth_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 30, // 30 days
     path: '/',
   });
 
@@ -76,6 +83,7 @@ export async function registerAction(formData: FormData) {
     phone: phone || null,
     phone_verified: false,
     role,
+    status: 'active',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -110,11 +118,17 @@ export async function registerAction(formData: FormData) {
   }
 
   const cookieStore = await cookies();
-  cookieStore.set('parkbnb_auth_token', userId, {
+  const { token } = signSessionToken({
+    sub: userId,
+    phone: phone || null,
+    name: full_name,
+    role,
+  });
+  cookieStore.set('parkbnb_auth_token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60 * 24 * 30,
     path: '/',
   });
 

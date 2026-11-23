@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { Navbar } from "@/components/ui/navbar";
-import { Footer } from "@/components/ui/footer";
+import { AppLayoutWrapper } from "@/components/layout/app-layout-wrapper";
 
 export const metadata: Metadata = {
   title: "ParkBnB | Peer-to-Peer Parking Marketplace (Ahmedabad)",
@@ -16,11 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-primary-soft selection:text-primary">
-        <Navbar />
-        <main className="flex-1 flex flex-col">
+        <AppLayoutWrapper navbar={<Navbar />}>
           {children}
-        </main>
-        <Footer />
+        </AppLayoutWrapper>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { getServerSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
-import { Car, Calendar, Shield, LifeBuoy, User } from 'lucide-react';
+import { Car, MapPin, Search, ShieldCheck } from 'lucide-react';
 
 export default async function CustomerLayout({
   children,
@@ -14,49 +14,43 @@ export default async function CustomerLayout({
   }
 
   return (
-    <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Customer Header */}
-      <div className="bg-surface rounded-card p-6 border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Sleek Context Subheader Bar */}
+      <div className="bg-surface rounded-card p-4 sm:p-5 border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-primary-soft text-primary font-bold text-lg flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-primary-soft text-primary font-bold text-base flex items-center justify-center border border-primary/20 shrink-0">
             {session.profile?.full_name?.charAt(0) || 'U'}
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">{session.profile?.full_name}</h1>
-            <p className="text-xs text-muted-foreground">{session.profile?.email} • {session.profile?.phone || 'Ahmedabad, GJ'}</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-bold text-foreground">
+                Welcome back, {session.profile?.full_name?.split(' ')[0] || 'Driver'}
+              </h1>
+              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                Verified Driver
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+              <MapPin className="w-3 h-3 text-primary shrink-0" />
+              <span>Ahmedabad Metro Mobility Service • {session.profile?.phone || '+91 98XXX XXXXX'}</span>
+            </p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex items-center gap-2 overflow-x-auto text-xs font-semibold">
+        {/* Quick Action Button */}
+        <div className="flex items-center gap-2 shrink-0">
           <Link
-            href="/account"
-            className="px-3.5 py-2 rounded-control bg-surface-muted hover:bg-primary-soft hover:text-primary transition-colors whitespace-nowrap"
+            href="/search"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow-xs transition-colors"
           >
-            Overview
+            <Search className="w-3.5 h-3.5" />
+            <span>Search Ahmedabad Parking</span>
           </Link>
-          <Link
-            href="/account/bookings"
-            className="px-3.5 py-2 rounded-control bg-surface-muted hover:bg-primary-soft hover:text-primary transition-colors whitespace-nowrap"
-          >
-            My Bookings
-          </Link>
-          <Link
-            href="/account/vehicles"
-            className="px-3.5 py-2 rounded-control bg-surface-muted hover:bg-primary-soft hover:text-primary transition-colors whitespace-nowrap"
-          >
-            My Vehicles
-          </Link>
-          <Link
-            href="/account/support"
-            className="px-3.5 py-2 rounded-control bg-surface-muted hover:bg-primary-soft hover:text-primary transition-colors whitespace-nowrap"
-          >
-            Support & Disputes
-          </Link>
-        </nav>
+        </div>
       </div>
 
-      {/* Main Content View */}
+      {/* Main Content Area */}
       <div>{children}</div>
     </div>
   );
