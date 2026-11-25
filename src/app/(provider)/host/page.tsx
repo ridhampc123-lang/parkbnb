@@ -77,7 +77,7 @@ export default async function HostDashboardPage() {
                   <div>
                     <div className="font-bold text-foreground">{space.title}</div>
                     <div className="text-muted-foreground">
-                      {space.property?.area || 'Ahmedabad'} • Slot {space.identifier} • ₹{space.hourly_rate}/hr
+                      {space.property?.area}, {space.property?.city || 'India'} • Slot {space.identifier} • ₹{space.hourly_rate}/hr
                     </div>
                   </div>
                   <span
@@ -121,7 +121,7 @@ export default async function HostDashboardPage() {
                 <div key={b.id} className="p-3.5 bg-surface-muted rounded-control flex items-center justify-between text-xs">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-foreground">{b.vehicle?.registration_number || 'GJ Plate'}</span>
+                      <span className="font-mono font-bold text-foreground">{b.vehicle?.registration_number || 'Cleared Plate'}</span>
                       <span className="text-muted-foreground">• {b.customer_display_name || 'Driver'}</span>
                     </div>
                     <div className="text-muted-foreground text-[11px] mt-0.5">

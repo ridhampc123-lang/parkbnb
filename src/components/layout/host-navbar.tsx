@@ -128,7 +128,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
               </div>
               <div className="text-left text-xs leading-tight hidden lg:block">
                 <div className="font-bold text-foreground truncate max-w-[120px]">{user.fullName}</div>
-                <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">Ahmedabad Host</div>
+                <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">Verified Host</div>
               </div>
             </div>
 

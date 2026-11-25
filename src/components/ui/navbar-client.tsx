@@ -42,7 +42,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
               Park<span className="text-accent">BnB</span>
             </span>
             <span className="text-[10px] font-bold bg-primary-soft text-primary px-2 py-0.5 rounded-full uppercase tracking-wider ml-1 border border-primary/20">
-              Ahmedabad
+              India
             </span>
           </Link>
 

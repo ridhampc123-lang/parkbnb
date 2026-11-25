@@ -74,6 +74,16 @@ class MarketplaceStore {
       'Ashram Road',
       'Vastrapur',
     ],
+    listingTitleOptions: [
+      'Covered Basement Parking Bay',
+      'Prime Surface Parking Slot with Security',
+      'Residential Gated Stilt Parking',
+      'Covered Parking Bay with EV Charging Socket',
+      'Commercial Multi-Level Parking Slot',
+      'Secure Overnight Parking Bay',
+      'Private Driveway Parking Space',
+      'Open-Air Visitor Parking Bay',
+    ],
   };
 
   constructor() {
@@ -274,6 +284,448 @@ class MarketplaceStore {
       vehicle_types: ['car_sedan', 'car_suv', 'car_hatchback', 'two_wheeler', 'ev_four_wheeler', 'ev_two_wheeler'],
     };
     this.spaces.set(space2Id, space2);
+
+    // =============================================================
+    // PAN-INDIA METRO SUPPLY (MUMBAI, DELHI NCR, BENGALURU, PUNE, HYDERABAD, CHENNAI, KOLKATA)
+    // =============================================================
+    // Host 3: Mumbai Metro Supply
+    const host3Id = 'usr-host-mumbai-01';
+    const host3Profile: Profile = {
+      id: host3Id,
+      customer_public_id: 'PBN-C-MUM001',
+      full_name: 'Aditya Singhania',
+      email: 'aditya.singhania@bkc-parking.in',
+      phone: '9820011223',
+      phone_verified: true,
+      role: 'provider',
+      status: 'active',
+      created_at: new Date(Date.now() - 86400000 * 40).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.profiles.set(host3Id, host3Profile);
+
+    const provider3: ProviderProfile = {
+      id: host3Id,
+      provider_type: 'commercial_operator',
+      business_name: 'BKC Financial Center Parking Towers',
+      pan_number: 'AAACS9876K',
+      gstin: '27AAACS9876K1Z9',
+      verification_status: 'approved',
+      verified_at: new Date(Date.now() - 86400000 * 35).toISOString(),
+      verified_by: adminId,
+      bank_account_holder: 'BKC Financial Center Parking Towers',
+      bank_account_number: '50200012345678',
+      bank_ifsc_code: 'HDFC0000060',
+      upi_id: 'bkc.parking@hdfcbank',
+      commission_rate: 0.12,
+      created_at: new Date(Date.now() - 86400000 * 40).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.providerProfiles.set(host3Id, provider3);
+
+    const prop3Id = 'prop-mumbai-bkc-01';
+    const prop3: Property = {
+      id: prop3Id,
+      provider_id: host3Id,
+      title: 'One BKC Commercial Tower',
+      property_type: 'commercial_lot',
+      address_line1: 'G Block, Bandra Kurla Complex',
+      landmark: 'Near MCA Club & US Consulate',
+      area: 'Bandra Kurla Complex (BKC)',
+      city: 'Mumbai',
+      postal_code: '400051',
+      latitude: 19.0657,
+      longitude: 72.8687,
+      created_at: new Date(Date.now() - 86400000 * 40).toISOString(),
+    };
+    this.properties.set(prop3Id, prop3);
+
+    const space3Id = 'spc-mumbai-bkc-01';
+    const space3: ParkingSpace = {
+      id: space3Id,
+      property_id: prop3Id,
+      provider_id: host3Id,
+      identifier: 'Podium Bay P2-18',
+      title: 'Covered Executive Parking at BKC Financial Center',
+      description: 'Boom barrier ANPR access, 24/7 CISF grade security, EV fast charging. Premium multi-level podium spot in Mumbai BKC.',
+      parking_type: 'covered',
+      hourly_rate: 80.0,
+      daily_rate: 650.0,
+      monthly_rate: 9500.0,
+      min_duration_hours: 1,
+      max_duration_hours: 720,
+      access_instructions: 'Scan entry QR or display ParkBnB Booking ID to gate attendant. Automatic ANPR barrier clears verified plates.',
+      security_features: ['cctv', 'gated_security', 'ev_charger', 'covered_shade', 'boom_barrier', 'valet'],
+      has_ev_charging: true,
+      height_limit_meters: 2.8,
+      status: 'approved',
+      is_active: true,
+      created_at: new Date(Date.now() - 86400000 * 40).toISOString(),
+      updated_at: new Date().toISOString(),
+      property: prop3,
+      photos: [
+        {
+          id: 'p3',
+          space_id: space3Id,
+          storage_path: 'https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?auto=format&fit=crop&w=800&q=80',
+          is_primary: true,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ],
+      vehicle_types: ['car_sedan', 'car_suv', 'car_hatchback', 'two_wheeler', 'ev_four_wheeler', 'ev_two_wheeler'],
+    };
+    this.spaces.set(space3Id, space3);
+
+    // Host 4: Delhi NCR Supply
+    const host4Id = 'usr-host-delhi-01';
+    const host4Profile: Profile = {
+      id: host4Id,
+      customer_public_id: 'PBN-C-DEL001',
+      full_name: 'Rohit Mehra',
+      email: 'rohit.mehra@cybercity-dlf.in',
+      phone: '9811099887',
+      phone_verified: true,
+      role: 'provider',
+      status: 'active',
+      created_at: new Date(Date.now() - 86400000 * 35).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.profiles.set(host4Id, host4Profile);
+
+    const provider4: ProviderProfile = {
+      id: host4Id,
+      provider_type: 'commercial_operator',
+      business_name: 'Cyber City Mobility Services',
+      pan_number: 'AABCM6543R',
+      gstin: '07AABCM6543R1Z2',
+      verification_status: 'approved',
+      verified_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+      verified_by: adminId,
+      bank_account_holder: 'Cyber City Mobility Services',
+      bank_account_number: '002105001234',
+      bank_ifsc_code: 'ICIC0000021',
+      upi_id: 'cybercity.parking@icici',
+      commission_rate: 0.15,
+      created_at: new Date(Date.now() - 86400000 * 35).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.providerProfiles.set(host4Id, provider4);
+
+    const prop4Id = 'prop-delhi-cybercity-01';
+    const prop4: Property = {
+      id: prop4Id,
+      provider_id: host4Id,
+      title: 'DLF Cyber City Tower 10',
+      property_type: 'commercial_lot',
+      address_line1: 'DLF Phase 2, Cyber Hub Corridor',
+      landmark: 'Next to Cyber Hub Metro Station',
+      area: 'Gurgaon Cyber City (DLF Phase 2/3)',
+      city: 'Delhi NCR',
+      postal_code: '122002',
+      latitude: 28.4950,
+      longitude: 77.0895,
+      created_at: new Date(Date.now() - 86400000 * 35).toISOString(),
+    };
+    this.properties.set(prop4Id, prop4);
+
+    const space4Id = 'spc-delhi-cybercity-01';
+    const space4: ParkingSpace = {
+      id: space4Id,
+      property_id: prop4Id,
+      provider_id: host4Id,
+      identifier: 'Basement 1, Spot 42',
+      title: 'Premium Corporate Spot at DLF Cyber City Tower',
+      description: 'Underground climate-controlled parking with direct high-speed elevator access to corporate offices and Cyber Hub food court.',
+      parking_type: 'basement',
+      hourly_rate: 70.0,
+      daily_rate: 550.0,
+      monthly_rate: 8000.0,
+      min_duration_hours: 1,
+      max_duration_hours: 720,
+      access_instructions: 'Drive into Basement Gate 3, show booking QR code to security. Slot #42 is immediately beside Tower 10 lobby.',
+      security_features: ['cctv', 'gated_security', 'covered_shade', 'ev_charger', 'elevator_access'],
+      has_ev_charging: true,
+      height_limit_meters: 2.5,
+      status: 'approved',
+      is_active: true,
+      created_at: new Date(Date.now() - 86400000 * 35).toISOString(),
+      updated_at: new Date().toISOString(),
+      property: prop4,
+      photos: [
+        {
+          id: 'p4',
+          space_id: space4Id,
+          storage_path: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80',
+          is_primary: true,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ],
+      vehicle_types: ['car_sedan', 'car_suv', 'car_hatchback', 'two_wheeler', 'ev_four_wheeler', 'ev_two_wheeler'],
+    };
+    this.spaces.set(space4Id, space4);
+
+    // Host 5: Bengaluru Silicon Valley Supply
+    const host5Id = 'usr-host-blr-01';
+    const host5Profile: Profile = {
+      id: host5Id,
+      customer_public_id: 'PBN-C-BLR001',
+      full_name: 'Suresh Narayanan',
+      email: 'suresh.n@koramangala-parking.com',
+      phone: '9845012399',
+      phone_verified: true,
+      role: 'provider',
+      status: 'active',
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.profiles.set(host5Id, host5Profile);
+
+    const provider5: ProviderProfile = {
+      id: host5Id,
+      provider_type: 'individual_residential',
+      business_name: 'Koramangala Gated Stilt Parking',
+      verification_status: 'approved',
+      verified_at: new Date(Date.now() - 86400000 * 25).toISOString(),
+      verified_by: adminId,
+      bank_account_holder: 'Suresh Narayanan',
+      bank_account_number: '600123456789',
+      bank_ifsc_code: 'SBIN0001234',
+      upi_id: 'suresh.n@oksbi',
+      commission_rate: 0.15,
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.providerProfiles.set(host5Id, provider5);
+
+    const prop5Id = 'prop-blr-kora-01';
+    const prop5: Property = {
+      id: prop5Id,
+      provider_id: host5Id,
+      title: 'Green Glen Residences',
+      property_type: 'apartment_complex',
+      address_line1: '17th Main Road, 4th Block',
+      landmark: 'Near Sony World Signal & Bethany High School',
+      area: 'Koramangala',
+      city: 'Bengaluru',
+      postal_code: '560034',
+      latitude: 12.9352,
+      longitude: 77.6245,
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+    };
+    this.properties.set(prop5Id, prop5);
+
+    const space5Id = 'spc-blr-kora-01';
+    const space5: ParkingSpace = {
+      id: space5Id,
+      property_id: prop5Id,
+      provider_id: host5Id,
+      identifier: 'Stilt Slot S-08',
+      title: 'Gated Stilt Parking in Koramangala 4th Block',
+      description: 'Covered stilt parking in premium residential society. 24-hour guard on duty, CCTV monitoring, walking distance to cafes and startups.',
+      parking_type: 'covered',
+      hourly_rate: 50.0,
+      daily_rate: 400.0,
+      monthly_rate: 5800.0,
+      min_duration_hours: 1,
+      max_duration_hours: 720,
+      access_instructions: 'Show guard booking reference code at society main gate. Park in assigned stilt slot S-08.',
+      security_features: ['cctv', 'gated_security', 'covered_shade', 'lighting'],
+      has_ev_charging: true,
+      height_limit_meters: 2.6,
+      status: 'approved',
+      is_active: true,
+      created_at: new Date(Date.now() - 86400000 * 30).toISOString(),
+      updated_at: new Date().toISOString(),
+      property: prop5,
+      photos: [
+        {
+          id: 'p5',
+          space_id: space5Id,
+          storage_path: 'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=800&q=80',
+          is_primary: true,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ],
+      vehicle_types: ['car_sedan', 'car_suv', 'car_hatchback', 'two_wheeler', 'ev_four_wheeler', 'ev_two_wheeler'],
+    };
+    this.spaces.set(space5Id, space5);
+
+    // Host 6: Pune IT Hub Supply
+    const host6Id = 'usr-host-pune-01';
+    const host6Profile: Profile = {
+      id: host6Id,
+      customer_public_id: 'PBN-C-PUN001',
+      full_name: 'Nitin Deshmukh',
+      email: 'nitin.d@hinjewadi-parking.in',
+      phone: '9890123456',
+      phone_verified: true,
+      role: 'provider',
+      status: 'active',
+      created_at: new Date(Date.now() - 86400000 * 28).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.profiles.set(host6Id, host6Profile);
+
+    const provider6: ProviderProfile = {
+      id: host6Id,
+      provider_type: 'commercial_operator',
+      business_name: 'Hinjewadi Tech Corridor Parking',
+      verification_status: 'approved',
+      verified_at: new Date(Date.now() - 86400000 * 20).toISOString(),
+      verified_by: adminId,
+      bank_account_holder: 'Nitin Deshmukh',
+      bank_account_number: '112233445566',
+      bank_ifsc_code: 'BARB0HINJEW',
+      upi_id: 'nitin.d@barodampay',
+      commission_rate: 0.15,
+      created_at: new Date(Date.now() - 86400000 * 28).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.providerProfiles.set(host6Id, provider6);
+
+    const prop6Id = 'prop-pune-hinj-01';
+    const prop6: Property = {
+      id: prop6Id,
+      provider_id: host6Id,
+      title: 'Infotech Park Plaza',
+      property_type: 'commercial_lot',
+      address_line1: 'Phase 1, Hinjewadi Rajiv Gandhi Infotech Park',
+      landmark: 'Near Wipro Circle & Blue Ridge',
+      area: 'Hinjewadi IT Park',
+      city: 'Pune',
+      postal_code: '411057',
+      latitude: 18.5913,
+      longitude: 73.7389,
+      created_at: new Date(Date.now() - 86400000 * 28).toISOString(),
+    };
+    this.properties.set(prop6Id, prop6);
+
+    const space6Id = 'spc-pune-hinj-01';
+    const space6: ParkingSpace = {
+      id: space6Id,
+      property_id: prop6Id,
+      provider_id: host6Id,
+      identifier: 'Bay IT-14',
+      title: 'Covered IT Park Parking at Hinjewadi Phase 1',
+      description: 'Dedicated parking bay with shade net, CCTV surveillance, and 24/7 access. Ideal for daily IT professionals.',
+      parking_type: 'covered',
+      hourly_rate: 40.0,
+      daily_rate: 320.0,
+      monthly_rate: 4500.0,
+      min_duration_hours: 1,
+      max_duration_hours: 720,
+      access_instructions: 'Enter via Gate 1 on Wipro Road. Attendant will verify license plate against ParkBnB manifest.',
+      security_features: ['cctv', 'gated_security', 'covered_shade', '24x7_access'],
+      has_ev_charging: true,
+      height_limit_meters: 2.7,
+      status: 'approved',
+      is_active: true,
+      created_at: new Date(Date.now() - 86400000 * 28).toISOString(),
+      updated_at: new Date().toISOString(),
+      property: prop6,
+      photos: [
+        {
+          id: 'p6',
+          space_id: space6Id,
+          storage_path: 'https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?auto=format&fit=crop&w=800&q=80',
+          is_primary: true,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ],
+      vehicle_types: ['car_sedan', 'car_suv', 'car_hatchback', 'two_wheeler', 'ev_four_wheeler', 'ev_two_wheeler'],
+    };
+    this.spaces.set(space6Id, space6);
+
+    // Host 7: Hyderabad Cyberabad Supply
+    const host7Id = 'usr-host-hyd-01';
+    const host7Profile: Profile = {
+      id: host7Id,
+      customer_public_id: 'PBN-C-HYD001',
+      full_name: 'Venkat Reddy',
+      email: 'venkat.reddy@cyberabad-parking.com',
+      phone: '9849011224',
+      phone_verified: true,
+      role: 'provider',
+      status: 'active',
+      created_at: new Date(Date.now() - 86400000 * 26).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.profiles.set(host7Id, host7Profile);
+
+    const provider7: ProviderProfile = {
+      id: host7Id,
+      provider_type: 'commercial_operator',
+      business_name: 'HITEC City Smart Park Services',
+      verification_status: 'approved',
+      verified_at: new Date(Date.now() - 86400000 * 22).toISOString(),
+      verified_by: adminId,
+      bank_account_holder: 'HITEC City Smart Park Services',
+      bank_account_number: '998877665544',
+      bank_ifsc_code: 'ANDB0000123',
+      upi_id: 'hitecpark@unionbank',
+      commission_rate: 0.14,
+      created_at: new Date(Date.now() - 86400000 * 26).toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.providerProfiles.set(host7Id, provider7);
+
+    const prop7Id = 'prop-hyd-hitec-01';
+    const prop7: Property = {
+      id: prop7Id,
+      provider_id: host7Id,
+      title: 'Mindspace Cyber Towers Arcade',
+      property_type: 'commercial_lot',
+      address_line1: 'Madhapur Road, HITEC City',
+      landmark: 'Opposite Cyber Towers Main Gate',
+      area: 'HITEC City / Cyberabad',
+      city: 'Hyderabad',
+      postal_code: '500081',
+      latitude: 17.4435,
+      longitude: 78.3772,
+      created_at: new Date(Date.now() - 86400000 * 26).toISOString(),
+    };
+    this.properties.set(prop7Id, prop7);
+
+    const space7Id = 'spc-hyd-hitec-01';
+    const space7: ParkingSpace = {
+      id: space7Id,
+      property_id: prop7Id,
+      provider_id: host7Id,
+      identifier: 'Multi-Level P3-11',
+      title: 'Mindspace Corporate Bay at HITEC City Phase 2',
+      description: 'Multi-level covered parking bay with automated license plate recognition and CCS2 fast DC charger on site.',
+      parking_type: 'multi_level',
+      hourly_rate: 55.0,
+      daily_rate: 450.0,
+      monthly_rate: 6500.0,
+      min_duration_hours: 1,
+      max_duration_hours: 720,
+      access_instructions: 'Drive up to Podium Level 3. Boom barrier automatically raises when license plate matches booking.',
+      security_features: ['cctv', 'gated_security', 'ev_charger', 'covered_shade', 'boom_barrier'],
+      has_ev_charging: true,
+      height_limit_meters: 2.8,
+      status: 'approved',
+      is_active: true,
+      created_at: new Date(Date.now() - 86400000 * 26).toISOString(),
+      updated_at: new Date().toISOString(),
+      property: prop7,
+      photos: [
+        {
+          id: 'p7',
+          space_id: space7Id,
+          storage_path: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80',
+          is_primary: true,
+          display_order: 0,
+          created_at: new Date().toISOString(),
+        },
+      ],
+      vehicle_types: ['car_sedan', 'car_suv', 'car_hatchback', 'two_wheeler', 'ev_four_wheeler', 'ev_two_wheeler'],
+    };
+    this.spaces.set(space7Id, space7);
   }
 
   // =============================================================
@@ -718,6 +1170,38 @@ class MarketplaceStore {
     return { success: true, reference, amount: params.amount };
   }
 
+  public updateProviderBankingDetails(providerId: string, details: {
+    bank_account_number?: string | null;
+    bank_ifsc_code?: string | null;
+    bank_account_holder?: string | null;
+    upi_id?: string | null;
+  }): ProviderProfile | null {
+    const existing = this.providerProfiles.get(providerId);
+    if (!existing) return null;
+
+    const updated: ProviderProfile = {
+      ...existing,
+      bank_account_number: details.bank_account_number !== undefined ? details.bank_account_number : existing.bank_account_number,
+      bank_ifsc_code: details.bank_ifsc_code !== undefined ? details.bank_ifsc_code : existing.bank_ifsc_code,
+      bank_account_holder: details.bank_account_holder !== undefined ? details.bank_account_holder : existing.bank_account_holder,
+      upi_id: details.upi_id !== undefined ? details.upi_id : existing.upi_id,
+      updated_at: new Date().toISOString(),
+    };
+
+    this.providerProfiles.set(providerId, updated);
+
+    this.recordAuditLog({
+      operator_email: 'host@parkbnb.in',
+      action: 'HOST_BANKING_UPDATED',
+      category: 'host',
+      target_id: providerId,
+      target_name: existing.business_name || providerId,
+      details: `Disbursement banking details updated: IFSC ${details.bank_ifsc_code || existing.bank_ifsc_code || 'N/A'}, UPI ${details.upi_id || existing.upi_id || 'N/A'}.`,
+    });
+
+    return updated;
+  }
+
   // =============================================================
   // PARKING SPACES & PROPERTIES
   // =============================================================
@@ -750,6 +1234,10 @@ class MarketplaceStore {
     const updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
     this.spaces.set(id, updated);
     return updated;
+  }
+
+  public deleteSpace(id: string): boolean {
+    return this.spaces.delete(id);
   }
 
   public updateSpacePricing(params: {
@@ -1018,6 +1506,58 @@ class MarketplaceStore {
     return updated;
   }
 
+  public hostCheckInBooking(bookingId: string, hostId: string): { success: boolean; error?: string; booking?: Booking } {
+    const b = this.bookings.get(bookingId);
+    if (!b) return { success: false, error: 'Booking reservation not found.' };
+    if (b.provider_id !== hostId) return { success: false, error: 'Unauthorized to manage clearance for this booking.' };
+    if (b.status !== 'confirmed') return { success: false, error: `Only confirmed reservations can be checked in (current status: ${b.status}).` };
+
+    const updated: Booking = {
+      ...b,
+      status: 'active',
+      check_in_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.bookings.set(bookingId, updated);
+
+    this.recordAuditLog({
+      operator_email: 'host@parkbnb.in',
+      action: 'DRIVER_GATE_CHECK_IN',
+      category: 'booking',
+      target_id: bookingId,
+      target_name: b.booking_reference,
+      details: `Gate entry granted for vehicle ${b.vehicle?.registration_number || 'Cleared Plate'}. Slot assigned: ${b.space?.identifier}`,
+    });
+
+    return { success: true, booking: updated };
+  }
+
+  public hostCheckOutBooking(bookingId: string, hostId: string): { success: boolean; error?: string; booking?: Booking } {
+    const b = this.bookings.get(bookingId);
+    if (!b) return { success: false, error: 'Booking reservation not found.' };
+    if (b.provider_id !== hostId) return { success: false, error: 'Unauthorized to manage clearance for this booking.' };
+    if (b.status !== 'active') return { success: false, error: `Only active parked vehicles can be checked out (current status: ${b.status}).` };
+
+    const updated: Booking = {
+      ...b,
+      status: 'completed',
+      check_out_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.bookings.set(bookingId, updated);
+
+    this.recordAuditLog({
+      operator_email: 'host@parkbnb.in',
+      action: 'DRIVER_GATE_CHECK_OUT',
+      category: 'booking',
+      target_id: bookingId,
+      target_name: b.booking_reference,
+      details: `Driver departed gate. Slot ${b.space?.identifier} released back to inventory.`,
+    });
+
+    return { success: true, booking: updated };
+  }
+
   public forceCompleteBooking(bookingId: string, reason?: string, operatorEmail = 'admin@parkbnb.in'): Booking | null {
     const b = this.bookings.get(bookingId);
     if (!b) return null;
@@ -1155,6 +1695,90 @@ class MarketplaceStore {
   // =============================================================
   // PLATFORM SETTINGS & AUDIT TRAIL
   // =============================================================
+  public getListingTitleOptions(): string[] {
+    return this.settings.listingTitleOptions && this.settings.listingTitleOptions.length > 0
+      ? [...this.settings.listingTitleOptions]
+      : [
+          'Covered Basement Parking Bay',
+          'Prime Surface Parking Slot with Security',
+          'Residential Gated Stilt Parking',
+          'Covered Parking Bay with EV Charging Socket',
+          'Commercial Multi-Level Parking Slot',
+          'Secure Overnight Parking Bay',
+          'Private Driveway Parking Space',
+          'Open-Air Visitor Parking Bay',
+        ];
+  }
+
+  public addListingTitleOption(title: string, operatorEmail = 'admin@parkbnb.in'): string[] {
+    const trimmed = title.trim();
+    if (!trimmed) return this.getListingTitleOptions();
+    if (!this.settings.listingTitleOptions) {
+      this.settings.listingTitleOptions = this.getListingTitleOptions();
+    }
+    if (!this.settings.listingTitleOptions.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+      this.settings.listingTitleOptions.push(trimmed);
+      this.recordAuditLog({
+        operator_email: operatorEmail,
+        action: 'LISTING_TITLE_OPTION_ADDED',
+        category: 'settings',
+        details: `Added listing title option: "${trimmed}"`,
+      });
+    }
+    return [...this.settings.listingTitleOptions];
+  }
+
+  public updateListingTitleOption(oldTitle: string, newTitle: string, operatorEmail = 'admin@parkbnb.in'): string[] {
+    const trimmedOld = oldTitle.trim();
+    const trimmedNew = newTitle.trim();
+    if (!trimmedNew) return this.getListingTitleOptions();
+    if (!this.settings.listingTitleOptions) {
+      this.settings.listingTitleOptions = this.getListingTitleOptions();
+    }
+    const idx = this.settings.listingTitleOptions.findIndex(t => t.toLowerCase() === trimmedOld.toLowerCase());
+    if (idx !== -1) {
+      this.settings.listingTitleOptions[idx] = trimmedNew;
+      this.recordAuditLog({
+        operator_email: operatorEmail,
+        action: 'LISTING_TITLE_OPTION_UPDATED',
+        category: 'settings',
+        details: `Updated listing title option from "${trimmedOld}" to "${trimmedNew}"`,
+      });
+    }
+    return [...this.settings.listingTitleOptions];
+  }
+
+  public removeListingTitleOption(title: string, operatorEmail = 'admin@parkbnb.in'): string[] {
+    const trimmed = title.trim();
+    if (!this.settings.listingTitleOptions) {
+      this.settings.listingTitleOptions = this.getListingTitleOptions();
+    }
+    if (this.settings.listingTitleOptions.length > 1) {
+      this.settings.listingTitleOptions = this.settings.listingTitleOptions.filter(
+        t => t.toLowerCase() !== trimmed.toLowerCase()
+      );
+      this.recordAuditLog({
+        operator_email: operatorEmail,
+        action: 'LISTING_TITLE_OPTION_REMOVED',
+        category: 'settings',
+        details: `Removed listing title option: "${trimmed}"`,
+      });
+    }
+    return [...this.settings.listingTitleOptions];
+  }
+
+  public updateProviderPayoutDetails(providerId: string, details: Partial<ProviderProfile>): ProviderProfile | undefined {
+    const existing = this.providerProfiles.get(providerId);
+    if (!existing) return undefined;
+    const updated = {
+      ...existing,
+      ...details,
+      updated_at: new Date().toISOString(),
+    };
+    this.providerProfiles.set(providerId, updated);
+    return updated;
+  }
+
   public getPlatformSettings(): PlatformSettings {
     return { ...this.settings };
   }

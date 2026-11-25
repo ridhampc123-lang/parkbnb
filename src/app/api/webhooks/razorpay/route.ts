@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Razorpay Webhook Handler
  * Verifies raw-body HMAC-SHA256 signature, ensures webhook idempotency,

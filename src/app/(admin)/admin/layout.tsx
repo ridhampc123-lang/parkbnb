@@ -13,9 +13,9 @@ export default async function AdminLayout({
 }) {
   const session = await getServerSession();
 
-  // Strict Server-Side Security Guard: Redirect directly to Login
+  // Strict Server-Side Security Guard: Redirect directly to Dedicated Admin Login
   if (!session.isAuthenticated || !isStaffRole(session.role)) {
-    redirect('/login');
+    redirect('/admin/login');
   }
 
   const store = getLocalStore();

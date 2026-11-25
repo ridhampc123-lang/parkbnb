@@ -13,7 +13,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-accent" />
-            <span>Now Active in Ahmedabad, Gujarat</span>
+            <span>Active in 14+ Indian Metro Corridors</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
@@ -22,7 +22,7 @@ export default function HomePage() {
           </h1>
 
           <p className="max-w-2xl mx-auto text-base sm:text-lg text-muted-foreground leading-relaxed">
-            Find and reserve available, verified parking near the places you need to go in Ahmedabad. Guaranteed slot, transparent hourly pricing, zero cruising.
+            Find and reserve verified parking across Mumbai, Delhi NCR, Bengaluru, Pune, Hyderabad, Chennai, Ahmedabad, and major Indian cities. Guaranteed spot, transparent pricing, zero cruising.
           </p>
 
           {/* Search Module */}
@@ -31,14 +31,14 @@ export default function HomePage() {
               {/* Destination */}
               <div className="lg:col-span-2">
                 <label className="block text-xs font-semibold text-foreground mb-1">
-                  Destination or Area in Ahmedabad
+                  City, Corridor or Destination in India
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-primary absolute left-3 top-3" />
                   <input
                     type="text"
                     name="destination"
-                    placeholder="e.g. Prahlad Nagar, Sindhu Bhavan, Navrangpura"
+                    placeholder="e.g. BKC Mumbai, Cyber City Delhi, Koramangala, SG Highway"
                     className="w-full pl-9 pr-3 py-2 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
@@ -88,20 +88,26 @@ export default function HomePage() {
               </div>
             </form>
 
-            {/* Quick Ahmedabad Area Chips */}
+            {/* Quick Metro Hub Chips */}
             <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Popular areas:</span>
-              <Link href="/search?destination=Prahlad+Nagar" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors">
-                Prahlad Nagar
+              <span className="font-semibold text-foreground">Explore Metros:</span>
+              <Link href="/search?city=Mumbai" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+                Mumbai (BKC)
               </Link>
-              <Link href="/search?destination=Sindhu+Bhavan" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors">
-                Sindhu Bhavan Road
+              <Link href="/search?city=Delhi+NCR" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+                Delhi NCR (Cyber City)
               </Link>
-              <Link href="/search?destination=Navrangpura" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors">
-                Navrangpura & CG Road
+              <Link href="/search?city=Bengaluru" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+                Bengaluru (Koramangala)
               </Link>
-              <Link href="/search?destination=Ashram+Road" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors">
-                Ashram Road
+              <Link href="/search?city=Pune" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+                Pune (Hinjewadi)
+              </Link>
+              <Link href="/search?city=Hyderabad" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+                Hyderabad (HITEC City)
+              </Link>
+              <Link href="/search?city=Ahmedabad" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+                Ahmedabad (SBR & Prahlad Nagar)
               </Link>
             </div>
           </div>
@@ -113,7 +119,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
           <div>
             <div className="text-xs font-semibold text-primary uppercase tracking-wider">Live & Verified Spaces</div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mt-1">Available parking in Ahmedabad</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mt-1">Available parking across India</h2>
             <p className="text-sm text-muted-foreground mt-1">Only verified listings with legal host authority are published.</p>
           </div>
           <Link
@@ -160,7 +166,7 @@ export default function HomePage() {
                 <div>
                   <div className="text-xs font-medium text-primary flex items-center gap-1 mb-1">
                     <MapPin className="w-3.5 h-3.5" />
-                    <span>{space.property?.area || 'Ahmedabad'}</span>
+                    <span>{space.property?.area}, {space.property?.city || 'India'}</span>
                   </div>
                   <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                     {space.title}

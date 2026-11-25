@@ -13,7 +13,7 @@ export function HostFooter() {
             </div>
             <span className="font-semibold text-foreground">ParkBnB Host Operations Console</span>
             <span>•</span>
-            <span>Ahmedabad Supply Corridor</span>
+            <span>Pan-India Mobility Supply Corridors</span>
           </div>
 
           {/* Center: Quick Links */}

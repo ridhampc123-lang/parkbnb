@@ -71,10 +71,12 @@ export interface ProviderProfile {
   rejection_reason?: string | null;
   verified_at?: string | null;
   verified_by?: string | null;
+  bank_name?: string | null;
   bank_account_number?: string | null;
   bank_ifsc_code?: string | null;
   bank_account_holder?: string | null;
   upi_id?: string | null;
+  payout_preference?: 'bank_transfer' | 'upi';
   commission_rate?: number | null; // e.g. 0.15 default
   created_at: string;
   updated_at: string;
@@ -256,4 +258,5 @@ export interface PlatformSettings {
   supportHotline: string;
   supportEmail: string;
   activeZones: string[];
+  listingTitleOptions?: string[];
 }

@@ -15,11 +15,11 @@ export function Footer() {
               <span>Park<span className="text-accent">BnB</span></span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              India&apos;s verified peer-to-peer parking marketplace. Currently operating in select mobility corridors in Ahmedabad, Gujarat.
+              India&apos;s verified peer-to-peer parking marketplace. Connecting drivers with verified residential and commercial parking spots across India.
             </p>
             <div className="text-xs font-medium text-primary flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5" />
-              <span>Pilot City: Ahmedabad, Gujarat</span>
+              <span>Pan-India Mobility Network</span>
             </div>
           </div>
 
@@ -34,15 +34,16 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Ahmedabad Pilot Hotspots */}
+          {/* Active Metros */}
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Active Service Areas</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Major Active Metros</h3>
             <ul className="space-y-1.5 text-xs text-foreground">
-              <li>Prahlad Nagar & Corporate Road</li>
-              <li>Sindhu Bhavan Road / Bodakdev</li>
-              <li>Navrangpura & CG Road</li>
-              <li>Ashram Road & Sabarmati Riverfront</li>
-              <li>Vastrapur / IIM Ahmedabad</li>
+              <li><Link href="/search?city=Mumbai" className="hover:text-primary">Mumbai (BKC & Andheri)</Link></li>
+              <li><Link href="/search?city=Delhi+NCR" className="hover:text-primary">Delhi NCR (Cyber City & CP)</Link></li>
+              <li><Link href="/search?city=Bengaluru" className="hover:text-primary">Bengaluru (Koramangala & Whitefield)</Link></li>
+              <li><Link href="/search?city=Pune" className="hover:text-primary">Pune (Hinjewadi & Koregaon Park)</Link></li>
+              <li><Link href="/search?city=Hyderabad" className="hover:text-primary">Hyderabad (HITEC City)</Link></li>
+              <li><Link href="/search?city=Ahmedabad" className="hover:text-primary">Ahmedabad (SBR & Prahlad Nagar)</Link></li>
             </ul>
           </div>
 

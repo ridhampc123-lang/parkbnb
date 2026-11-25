@@ -545,3 +545,81 @@ export async function exportAdminReportAction(reportType: 'customers' | 'hosts' 
 
   return { success: true, csvContent, filename: `parkbnb-${reportType}-${new Date().toISOString().slice(0, 10)}.csv` };
 }
+
+// -------------------------------------------------------------
+// LISTING TITLE DROPDOWN MANAGEMENT (ADMIN CONTROLLED)
+// -------------------------------------------------------------
+export async function getListingTitleOptionsAction(): Promise<string[]> {
+  const store = getLocalStore();
+  return store.getListingTitleOptions();
+}
+
+export async function addListingTitleOptionAction(title: string) {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || (!hasPermission(session, 'admin:full_access') && !isStaffRole(session.role))) {
+    return { error: 'Forbidden: Admin authorization required to manage listing title dropdown options.' };
+  }
+
+  const trimmed = title?.trim();
+  if (!trimmed || trimmed.length < 3) {
+    return { error: 'Listing title option must be at least 3 characters long.' };
+  }
+
+  const store = getLocalStore();
+  const existing = store.getListingTitleOptions();
+  if (existing.some(t => t.toLowerCase() === trimmed.toLowerCase())) {
+    return { error: 'This listing title option already exists in the dropdown.' };
+  }
+
+  const updated = store.addListingTitleOption(trimmed, session.profile?.email || 'admin@parkbnb.in');
+
+  revalidatePath('/admin/settings');
+  revalidatePath('/host/spaces/new');
+  revalidatePath('/admin/listings');
+
+  return { success: true, options: updated };
+}
+
+export async function updateListingTitleOptionAction(oldTitle: string, newTitle: string) {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || (!hasPermission(session, 'admin:full_access') && !isStaffRole(session.role))) {
+    return { error: 'Forbidden: Admin authorization required to manage listing title dropdown options.' };
+  }
+
+  const trimmedOld = oldTitle?.trim();
+  const trimmedNew = newTitle?.trim();
+  if (!trimmedNew || trimmedNew.length < 3) {
+    return { error: 'Listing title option must be at least 3 characters long.' };
+  }
+
+  const store = getLocalStore();
+  const updated = store.updateListingTitleOption(trimmedOld, trimmedNew, session.profile?.email || 'admin@parkbnb.in');
+
+  revalidatePath('/admin/settings');
+  revalidatePath('/host/spaces/new');
+  revalidatePath('/admin/listings');
+
+  return { success: true, options: updated };
+}
+
+export async function removeListingTitleOptionAction(title: string) {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || (!hasPermission(session, 'admin:full_access') && !isStaffRole(session.role))) {
+    return { error: 'Forbidden: Admin authorization required to manage listing title dropdown options.' };
+  }
+
+  const trimmed = title?.trim();
+  const store = getLocalStore();
+  const existing = store.getListingTitleOptions();
+  if (existing.length <= 1) {
+    return { error: 'Cannot remove the last listing title option. At least one option must remain in the dropdown.' };
+  }
+
+  const updated = store.removeListingTitleOption(trimmed, session.profile?.email || 'admin@parkbnb.in');
+
+  revalidatePath('/admin/settings');
+  revalidatePath('/host/spaces/new');
+  revalidatePath('/admin/listings');
+
+  return { success: true, options: updated };
+}
