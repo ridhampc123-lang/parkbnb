@@ -295,9 +295,9 @@ export default function HomePage() {
 
         <div className="space-y-4">
           <div className="bg-surface p-5 rounded-card border border-border">
-            <h3 className="text-sm font-bold text-foreground">Can I list any apartment parking slot in Ahmedabad?</h3>
+            <h3 className="text-sm font-bold text-foreground">Can I list any apartment or commercial parking slot?</h3>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-              No. In accordance with Gujarat Cooperative Housing Society regulations and local association rules, providers must possess documented legal authority or society NOC before listing. Our Admin Operations team audits all property verification documents before a listing is approved.
+              No. In accordance with Indian Cooperative Housing Society regulations and local municipal association rules, providers must possess documented legal authority or society NOC before listing. Our Admin Operations team audits all property verification documents before a listing is approved.
             </p>
           </div>
 

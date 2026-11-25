@@ -671,6 +671,64 @@ export function HostManagementClient({
               Transfer verified booking earnings to <span className="text-white font-semibold">{payoutHost.provider.business_name || payoutHost.profile.full_name}</span>.
             </p>
 
+            {/* Beneficiary Settlement Account Info */}
+            <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1.5">
+              <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                Disbursement Account Destination
+              </span>
+              {payoutHost.provider.bank_account_number || payoutHost.provider.upi_id ? (
+                <div className="space-y-1 text-slate-300">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Beneficiary:</span>
+                    <span className="font-semibold text-white">
+                      {payoutHost.provider.bank_account_holder || payoutHost.profile.full_name}
+                    </span>
+                  </div>
+                  {payoutHost.provider.bank_name && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Bank:</span>
+                      <span className="font-mono">{payoutHost.provider.bank_name}</span>
+                    </div>
+                  )}
+                  {payoutHost.provider.bank_account_number && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">A/C Number:</span>
+                      <span className="font-mono font-bold text-white">
+                        {payoutHost.provider.bank_account_number}
+                      </span>
+                    </div>
+                  )}
+                  {payoutHost.provider.bank_ifsc_code && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">IFSC Code:</span>
+                      <span className="font-mono text-cyan-400 font-bold">
+                        {payoutHost.provider.bank_ifsc_code}
+                      </span>
+                    </div>
+                  )}
+                  {payoutHost.provider.upi_id && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">UPI ID:</span>
+                      <span className="font-mono text-emerald-400 font-bold">
+                        {payoutHost.provider.upi_id}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-1 border-t border-slate-900 text-[10px]">
+                    <span className="text-slate-500">Preferred Method:</span>
+                    <span className="font-semibold text-purple-400 uppercase">
+                      {payoutHost.provider.payout_preference || 'bank_transfer'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Host has not entered bank or UPI details yet.</span>
+                </div>
+              )}
+            </div>
+
             <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1">
               <span className="text-[10px] text-slate-500 uppercase font-semibold">Available Unpaid Balance</span>
               <p className="text-2xl font-mono font-extrabold text-emerald-400">

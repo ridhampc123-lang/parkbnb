@@ -1171,20 +1171,24 @@ class MarketplaceStore {
   }
 
   public updateProviderBankingDetails(providerId: string, details: {
+    bank_name?: string | null;
     bank_account_number?: string | null;
     bank_ifsc_code?: string | null;
     bank_account_holder?: string | null;
     upi_id?: string | null;
+    payout_preference?: 'bank_transfer' | 'upi';
   }): ProviderProfile | null {
     const existing = this.providerProfiles.get(providerId);
     if (!existing) return null;
 
     const updated: ProviderProfile = {
       ...existing,
+      bank_name: details.bank_name !== undefined ? details.bank_name : existing.bank_name,
       bank_account_number: details.bank_account_number !== undefined ? details.bank_account_number : existing.bank_account_number,
       bank_ifsc_code: details.bank_ifsc_code !== undefined ? details.bank_ifsc_code : existing.bank_ifsc_code,
       bank_account_holder: details.bank_account_holder !== undefined ? details.bank_account_holder : existing.bank_account_holder,
       upi_id: details.upi_id !== undefined ? details.upi_id : existing.upi_id,
+      payout_preference: details.payout_preference !== undefined ? details.payout_preference : existing.payout_preference,
       updated_at: new Date().toISOString(),
     };
 

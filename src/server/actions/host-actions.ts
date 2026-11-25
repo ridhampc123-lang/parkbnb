@@ -101,10 +101,12 @@ export async function updateProviderBankingAction(formData: FormData) {
     return { error: 'Authentication required.' };
   }
 
+  const bankName = (formData.get('bank_name') as string)?.trim() || null;
   const bankAccountNumber = (formData.get('bank_account_number') as string)?.trim() || null;
   const bankIfscCode = (formData.get('bank_ifsc_code') as string)?.trim().toUpperCase() || null;
   const bankAccountHolder = (formData.get('bank_account_holder') as string)?.trim() || null;
   const upiId = (formData.get('upi_id') as string)?.trim() || null;
+  const payoutPreference = (formData.get('payout_preference') as 'bank_transfer' | 'upi') || 'bank_transfer';
 
   if (bankIfscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankIfscCode)) {
     return { error: 'Please enter a valid 11-character Indian Bank IFSC code (e.g. HDFC0001234).' };
@@ -120,10 +122,12 @@ export async function updateProviderBankingAction(formData: FormData) {
 
   const store = getLocalStore();
   const updated = store.updateProviderBankingDetails(session.user.id, {
+    bank_name: bankName,
     bank_account_number: bankAccountNumber,
     bank_ifsc_code: bankIfscCode,
     bank_account_holder: bankAccountHolder,
     upi_id: upiId,
+    payout_preference: payoutPreference,
   });
 
   if (!updated) {
