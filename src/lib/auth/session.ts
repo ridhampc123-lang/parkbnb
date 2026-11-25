@@ -71,7 +71,7 @@ export async function getServerSession(): Promise<UserSession> {
   // 2. Read and cryptographically verify session token
   if (localAuthCookie) {
     try {
-      // First, attempt cryptographic verification of HMAC-SHA256 signed token
+      // Strictly require cryptographic verification of HMAC-SHA256 signed token
       const tokenPayload = verifySessionToken(localAuthCookie);
       const store = getLocalStore();
 
@@ -90,22 +90,8 @@ export async function getServerSession(): Promise<UserSession> {
             isAuthenticated: true,
           };
         }
-      } else {
-        // Fallback for seed IDs in dev environment only if directly registered in store
-        const profile = store.getProfileById(localAuthCookie);
-        if (profile && profile.status !== 'suspended') {
-          return {
-            user: {
-              id: profile.id,
-              email: profile.email || '',
-              phone: profile.phone || null,
-            },
-            profile,
-            role: profile.role,
-            isAuthenticated: true,
-          };
-        }
       }
+      // Never allow raw session IDs or unsigned cookies as credentials
     } catch {
       // Ignore invalid or tampered session
     }

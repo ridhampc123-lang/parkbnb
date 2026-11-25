@@ -25,6 +25,7 @@ import {
   Shield
 } from 'lucide-react';
 import { initiateBookingHoldAction, confirmBookingPaymentAction } from '@/server/actions/booking-actions';
+import { completeCustomerOnboardingAction } from '@/server/actions/auth-actions';
 import {
   checkMobileIdentityAction,
   sendOtpAction,
@@ -67,6 +68,7 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
   const [otpCode, setOtpCode] = useState('');
   const [fullNameInput, setFullNameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [newVehiclePlate, setNewVehiclePlate] = useState('');
 
   // OTP Controls
@@ -300,27 +302,34 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
       return;
     }
 
+    if (passwordInput && passwordInput.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
     setLoading(true);
 
-    // Save vehicle into customer smart memory
-    const vehRes = await saveCustomerVehicleAction({
+    // Save profile, credentials, and vehicle atomically
+    const onboardingRes = await completeCustomerOnboardingAction({
+      fullName: fullNameInput.trim(),
+      email: emailInput.trim() || undefined,
+      password: passwordInput ? passwordInput : undefined,
+      vehiclePlate: newVehiclePlate.trim().toUpperCase(),
       vehicleType,
-      registrationNumber: newVehiclePlate.trim().toUpperCase(),
-      isDefault: true,
     });
 
     setLoading(false);
 
-    if (vehRes.error) {
-      setErrorMessage(vehRes.error);
+    if (onboardingRes.error) {
+      setErrorMessage(onboardingRes.error);
       return;
     }
 
-    if (vehRes.vehicle) {
-      setSelectedVehicleId(vehRes.vehicle.id);
+    if (onboardingRes.vehicle) {
+      setSelectedVehicleId(onboardingRes.vehicle.id);
       await refreshCustomerMemory();
       // Lock temporary reservation hold
-      await executeBookingHold(vehRes.vehicle.id);
+      await executeBookingHold(onboardingRes.vehicle.id);
     }
   }
 
@@ -402,7 +411,7 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-32 md:pb-8">
       {/* Back button */}
       <div>
         <Link href="/search" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
@@ -641,11 +650,43 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* CHECKOUT MODAL: FRICTIONLESS CUSTOMER JOURNEY & OTP MODAL     */}
+      {/* MOBILE STICKY BOTTOM ACTION BAR (md:hidden)                  */}
+      {/* ------------------------------------------------------------- */}
+      <div className="md:hidden fixed bottom-16 left-0 right-0 z-30 bg-surface/95 backdrop-blur-md border-t border-border p-3 px-4 shadow-lg flex items-center justify-between pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-black text-foreground">₹{space.hourly_rate}</span>
+            <span className="text-xs text-muted-foreground">/ hr</span>
+          </div>
+          {livePricing ? (
+            <div className="text-[11px] font-semibold text-primary">
+              Est. ₹{livePricing.totalAmount.toFixed(0)} ({livePricing.totalHours} hr{livePricing.totalHours > 1 ? 's' : ''})
+            </div>
+          ) : (
+            <div className="text-[10px] text-muted-foreground">Select date & time</div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={handleBookNowClick}
+          disabled={space.status !== 'approved' || !space.is_active}
+          className="py-2.5 px-6 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow-md flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+        >
+          <span>Book Slot</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* CHECKOUT MODAL: MOBILE-FRIENDLY BOTTOM SHEET / POPUP          */}
       {/* ------------------------------------------------------------- */}
       {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-surface rounded-card border border-border shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-surface rounded-t-2xl sm:rounded-card border-t sm:border border-border shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto p-5 sm:p-6 space-y-4 pb-safe animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+            {/* Mobile Drag Indicator */}
+            <div className="w-12 h-1 bg-border rounded-full mx-auto mb-1 sm:hidden shrink-0" />
+
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div>
@@ -848,7 +889,7 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
 
                 <div>
                   <label className="block text-[11px] font-semibold text-foreground mb-1">
-                    Email Address <span className="text-muted-foreground font-normal">(Optional, for PDF receipts)</span>
+                    Email Address <span className="text-muted-foreground font-normal">(Optional, for PDF receipts & sign-in)</span>
                   </label>
                   <input
                     type="email"
@@ -857,6 +898,26 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
                     placeholder="rajesh@example.com"
                     className="w-full px-3 py-1.5 bg-surface-muted border border-border rounded-control focus:outline-none focus:border-primary text-foreground"
                   />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-foreground">
+                      Account Password <span className="text-muted-foreground font-normal">(Optional, min 6 chars)</span>
+                    </label>
+                    <span className="text-[10px] text-primary font-medium">Enables email login</span>
+                  </div>
+                  <input
+                    type="password"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Create a password (min 6 characters)"
+                    minLength={6}
+                    className="w-full px-3 py-1.5 bg-surface-muted border border-border rounded-control focus:outline-none focus:border-primary text-foreground"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Set a password now to sign in with email later. You can always sign in anytime with mobile OTP.
+                  </p>
                 </div>
 
                 <div>

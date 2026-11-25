@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
 import { spaceSchema } from '@/lib/validation/schemas';
+import { repository } from '@/lib/db/supabase-repository';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 import { ParkingSpace, Property, VehicleType } from '@/types/database';
 
@@ -159,10 +160,10 @@ export async function createSpaceAction(formData: FormData) {
     vehicle_types: validation.data.vehicle_types,
   };
 
-  store.createSpace(space);
+  await repository.createParkingSpace(space);
 
   // Record Admin Audit Log
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.profile?.email || 'host@parkbnb.in',
     action: 'SPACE_SUBMITTED',
     category: 'space',
@@ -181,8 +182,7 @@ export async function createSpaceAction(formData: FormData) {
 }
 
 export async function getPublicApprovedSpacesAction(): Promise<ParkingSpace[]> {
-  const store = getLocalStore();
-  return store.getApprovedPublicSpaces();
+  return repository.getApprovedSpaces();
 }
 
 export async function getPendingSpacesAction(): Promise<ParkingSpace[]> {
@@ -196,8 +196,8 @@ export async function getAllSpacesAction(): Promise<ParkingSpace[]> {
 }
 
 export async function getSpaceByIdAction(id: string): Promise<ParkingSpace | undefined> {
-  const store = getLocalStore();
-  return store.getSpaceById(id);
+  const space = await repository.getSpaceById(id);
+  return space || undefined;
 }
 
 export async function hostUpdatePricingAction(params: {
@@ -216,8 +216,7 @@ export async function hostUpdatePricingAction(params: {
     return { error: 'Please provide a valid hourly rate greater than ₹0.' };
   }
 
-  const store = getLocalStore();
-  const space = store.getSpaceById(spaceId);
+  const space = await repository.getSpaceById(spaceId);
   if (!space) {
     return { error: 'Parking space not found.' };
   }
@@ -226,13 +225,13 @@ export async function hostUpdatePricingAction(params: {
     return { error: 'Unauthorized to modify this space.' };
   }
 
-  const updated = store.updateSpace(spaceId, {
+  const updated = await repository.updateParkingSpace(spaceId, {
     hourly_rate: Number(hourlyRate),
     daily_rate: dailyRate ? Number(dailyRate) : null,
     monthly_rate: monthlyRate ? Number(monthlyRate) : null,
   });
 
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.profile?.email || 'host@parkbnb.in',
     action: 'SPACE_PRICING_UPDATED',
     category: 'space',
@@ -255,8 +254,7 @@ export async function hostToggleSpaceStatusAction(spaceId: string, isActive: boo
     return { error: 'Authentication required.' };
   }
 
-  const store = getLocalStore();
-  const space = store.getSpaceById(spaceId);
+  const space = await repository.getSpaceById(spaceId);
   if (!space) {
     return { error: 'Parking space not found.' };
   }
@@ -265,9 +263,9 @@ export async function hostToggleSpaceStatusAction(spaceId: string, isActive: boo
     return { error: 'Unauthorized to modify this space.' };
   }
 
-  const updated = store.updateSpace(spaceId, { is_active: isActive });
+  const updated = await repository.updateParkingSpace(spaceId, { is_active: isActive });
 
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.profile?.email || 'host@parkbnb.in',
     action: isActive ? 'SPACE_ACTIVATED_BY_HOST' : 'SPACE_PAUSED_BY_HOST',
     category: 'space',

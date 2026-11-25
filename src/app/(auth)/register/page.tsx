@@ -128,9 +128,22 @@ function RegisterForm() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 text-danger rounded-control text-xs flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>{error}</span>
+        <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-control text-xs space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+            <span className="font-medium">{error}</span>
+          </div>
+          {error.includes('already exists') && (
+            <div className="pt-1.5 border-t border-red-200 text-[11px]">
+              Already registered?{' '}
+              <Link
+                href="/login"
+                className="font-bold text-primary underline hover:text-primary-hover"
+              >
+                Sign in with Password or Mobile OTP &rarr;
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

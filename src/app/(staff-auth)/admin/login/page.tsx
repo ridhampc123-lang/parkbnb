@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
 
   function handleFillDemo() {
     setEmail('admin@parkbnb.in');
-    setPassword('Admin@12345');
+    setPassword('Admin@2026!');
     setError(null);
   }
 

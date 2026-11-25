@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
 
     const payload = JSON.parse(rawBody);
     const event = payload.event;
-    const store = getLocalStore();
 
     if (event === 'payment.captured') {
       const payment = payload.payload?.payment?.entity;
@@ -40,12 +39,12 @@ export async function POST(req: NextRequest) {
       const bookingId = notes.booking_id;
 
       if (bookingId) {
-        const booking = store.getBookingById(bookingId);
+        const booking = await repository.getBookingById(bookingId);
         if (booking && booking.status !== 'confirmed') {
-          store.updateBookingStatus(bookingId, 'confirmed');
+          await repository.updateBookingStatus(bookingId, 'confirmed');
 
           // 1. Gross Customer Payment
-          store.recordLedgerEntry({
+          await repository.recordLedgerEntry({
             booking_id: bookingId,
             entry_type: 'CUSTOMER_PAYMENT',
             debit_account: 'GATEWAY_ESCROW',
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
           });
 
           // 2. Platform Commission
-          store.recordLedgerEntry({
+          await repository.recordLedgerEntry({
             booking_id: bookingId,
             entry_type: 'PLATFORM_COMMISSION',
             debit_account: 'PLATFORM_UNEARNED',
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
           });
 
           // 3. Provider Payable
-          store.recordLedgerEntry({
+          await repository.recordLedgerEntry({
             booking_id: bookingId,
             entry_type: 'PROVIDER_PAYABLE',
             debit_account: 'PLATFORM_UNEARNED',
@@ -80,9 +79,9 @@ export async function POST(req: NextRequest) {
             reference_id: booking.id,
           });
 
-          store.releaseHold(booking.space_id, booking.customer_id);
+          await repository.releaseHold(booking.space_id, booking.customer_id);
 
-          store.recordAuditLog({
+          await repository.recordAuditLog({
             operator_email: 'webhook-razorpay',
             action: 'WEBHOOK_PAYMENT_CAPTURED',
             category: 'booking',
@@ -98,9 +97,9 @@ export async function POST(req: NextRequest) {
       const bookingId = notes.booking_id;
 
       if (bookingId) {
-        const booking = store.getBookingById(bookingId);
+        const booking = await repository.getBookingById(bookingId);
         if (booking && booking.status === 'hold_pending') {
-          store.updateBookingStatus(bookingId, 'payment_failed', 'Payment failed on gateway');
+          await repository.updateBookingStatus(bookingId, 'payment_failed', 'Payment failed on gateway');
         }
       }
     }

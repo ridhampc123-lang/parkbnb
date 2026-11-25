@@ -7,26 +7,26 @@ export default function HomePage() {
   const approvedSpaces = store.getApprovedPublicSpaces();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen pb-20 md:pb-0">
       {/* Hero Section with Destination Search */}
-      <section className="relative bg-gradient-to-b from-primary-soft/40 via-background to-background pt-12 pb-20 px-4 sm:px-6 lg:px-8 border-b border-border">
-        <div className="max-w-5xl mx-auto text-center space-y-6">
+      <section className="relative bg-gradient-to-b from-primary-soft/40 via-background to-background pt-6 pb-12 sm:pt-12 sm:pb-20 px-4 sm:px-6 lg:px-8 border-b border-border">
+        <div className="max-w-5xl mx-auto text-center space-y-4 sm:space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft text-primary text-xs font-semibold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-accent" />
             <span>Active in 14+ Indian Metro Corridors</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
             Your parking spot, <br className="hidden sm:inline" />
             <span className="text-primary underline decoration-accent decoration-4 underline-offset-8">before you arrive.</span>
           </h1>
 
-          <p className="max-w-2xl mx-auto text-base sm:text-lg text-muted-foreground leading-relaxed">
+          <p className="max-w-2xl mx-auto text-sm sm:text-lg text-muted-foreground leading-relaxed">
             Find and reserve verified parking across Mumbai, Delhi NCR, Bengaluru, Pune, Hyderabad, Chennai, Ahmedabad, and major Indian cities. Guaranteed spot, transparent pricing, zero cruising.
           </p>
 
           {/* Search Module */}
-          <div className="max-w-4xl mx-auto mt-8 bg-surface p-4 sm:p-5 rounded-card shadow-card border border-border text-left">
+          <div className="max-w-4xl mx-auto mt-6 sm:mt-8 bg-surface p-4 sm:p-5 rounded-card shadow-card border border-border text-left">
             <form action="/search" method="GET" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               {/* Destination */}
               <div className="lg:col-span-2">
@@ -34,12 +34,12 @@ export default function HomePage() {
                   City, Corridor or Destination in India
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-primary absolute left-3 top-3" />
+                  <MapPin className="w-4 h-4 text-primary absolute left-3 top-3.5" />
                   <input
                     type="text"
                     name="destination"
-                    placeholder="e.g. BKC Mumbai, Cyber City Delhi, Koramangala, SG Highway"
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    placeholder="e.g. BKC Mumbai, Cyber City Delhi, Koramangala"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[44px]"
                   />
                 </div>
               </div>
@@ -50,12 +50,12 @@ export default function HomePage() {
                   Arrival Date
                 </label>
                 <div className="relative">
-                  <Calendar className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+                  <Calendar className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
                   <input
                     type="date"
                     name="start_date"
                     defaultValue={new Date().toISOString().split('T')[0]}
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground min-h-[44px]"
                   />
                 </div>
               </div>
@@ -66,12 +66,12 @@ export default function HomePage() {
                   Arrival Time
                 </label>
                 <div className="relative">
-                  <Clock className="w-4 h-4 text-muted-foreground absolute left-3 top-3" />
+                  <Clock className="w-4 h-4 text-muted-foreground absolute left-3 top-3.5" />
                   <input
                     type="time"
                     name="start_time"
                     defaultValue="10:00"
-                    className="w-full pl-9 pr-3 py-2 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
+                    className="w-full pl-9 pr-3 py-2.5 text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground min-h-[44px]"
                   />
                 </div>
               </div>
@@ -80,7 +80,7 @@ export default function HomePage() {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full h-[38px] flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-control shadow-sm transition-colors"
+                  className="w-full min-h-[44px] flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-control shadow-sm transition-colors"
                 >
                   <Search className="w-4 h-4" />
                   <span>Find Parking</span>
@@ -91,26 +91,26 @@ export default function HomePage() {
             {/* Quick Metro Hub Chips */}
             <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Explore Metros:</span>
-              <Link href="/search" className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-control transition-colors font-bold flex items-center gap-1">
+              <Link href="/search" className="px-2.5 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-control transition-colors font-bold flex items-center gap-1 min-h-[36px]">
                 <span>📍 Near Me (GPS)</span>
               </Link>
-              <Link href="/search?city=Mumbai" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
+              <Link href="/search?city=Mumbai" className="px-2.5 py-1.5 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium min-h-[36px] flex items-center">
                 Mumbai (BKC)
               </Link>
-              <Link href="/search?city=Delhi+NCR" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
-                Delhi NCR (Cyber City)
+              <Link href="/search?city=Delhi+NCR" className="px-2.5 py-1.5 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium min-h-[36px] flex items-center">
+                Delhi NCR
               </Link>
-              <Link href="/search?city=Bengaluru" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
-                Bengaluru (Koramangala)
+              <Link href="/search?city=Bengaluru" className="px-2.5 py-1.5 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium min-h-[36px] flex items-center">
+                Bengaluru
               </Link>
-              <Link href="/search?city=Pune" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
-                Pune (Hinjewadi)
+              <Link href="/search?city=Pune" className="px-2.5 py-1.5 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium min-h-[36px] flex items-center">
+                Pune
               </Link>
-              <Link href="/search?city=Hyderabad" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
-                Hyderabad (HITEC City)
+              <Link href="/search?city=Hyderabad" className="px-2.5 py-1.5 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium min-h-[36px] flex items-center">
+                Hyderabad
               </Link>
-              <Link href="/search?city=Ahmedabad" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
-                Ahmedabad (SBR & Prahlad Nagar)
+              <Link href="/search?city=Ahmedabad" className="px-2.5 py-1.5 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium min-h-[36px] flex items-center">
+                Ahmedabad
               </Link>
             </div>
           </div>

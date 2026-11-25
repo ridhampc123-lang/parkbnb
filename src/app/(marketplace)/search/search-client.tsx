@@ -51,6 +51,22 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
   const [locationError, setLocationError] = useState<string | null>(null);
   const [maxRadiusKm, setMaxRadiusKm] = useState<number | null>(null);
 
+  // Mobile App Controls
+  const [mobileTab, setMobileTab] = useState<'list' | 'map'>('list');
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+
+  // Active Filter Count for mobile badge
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (cityFilter !== 'all') count++;
+    if (vehicleFilter !== 'all') count++;
+    if (typeFilter !== 'all') count++;
+    if (evOnly) count++;
+    if (maxPrice < 200) count++;
+    if (sortBy !== 'price_asc' && sortBy !== 'distance_asc') count++;
+    return count;
+  }, [cityFilter, vehicleFilter, typeFilter, evOnly, maxPrice, sortBy]);
+
   // Active City configuration
   const activeCityConfig = INDIAN_CITIES.find(
     (c) => c.name.toLowerCase() === cityFilter.toLowerCase() || c.id.toLowerCase() === cityFilter.toLowerCase()
@@ -188,7 +204,7 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
       {/* Top Search & Filter Bar */}
       <div className="bg-surface border-b border-border sticky top-16 z-30 px-4 sm:px-6 lg:px-8 py-3 shadow-xs space-y-2.5">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          {/* Search Input & "Near Me" GPS Button */}
+          {/* Search Input, GPS & Mobile Filter Trigger */}
           <div className="flex items-center gap-2 w-full md:w-auto flex-1 max-w-xl">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-primary absolute left-3 top-3" />
@@ -196,8 +212,8 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                 type="text"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder="Search city, area, landmark (e.g. BKC, Cyber City, Koramangala)..."
-                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
+                placeholder="Search city, area, landmark (e.g. BKC, Cyber City)..."
+                className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-surface-muted border border-border rounded-control focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground min-h-[44px] md:min-h-0"
               />
             </div>
 
@@ -206,7 +222,7 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
               type="button"
               onClick={handleDetectLocation}
               disabled={locationLoading}
-              className={`px-3 py-2 text-xs font-bold rounded-control flex items-center gap-1.5 transition-all shadow-xs shrink-0 ${
+              className={`px-3 py-2 text-xs font-bold rounded-control flex items-center gap-1.5 transition-all shadow-xs shrink-0 min-h-[44px] md:min-h-0 ${
                 customerCoords
                   ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20'
                   : 'bg-primary-soft hover:bg-primary/20 text-primary border border-primary/30'
@@ -218,12 +234,28 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
               ) : (
                 <Navigation className={`w-3.5 h-3.5 ${customerCoords ? 'fill-white' : ''}`} />
               )}
-              <span>{customerCoords ? 'GPS Active' : 'Near Me'}</span>
+              <span className="hidden xs:inline">{customerCoords ? 'GPS Active' : 'Near Me'}</span>
+            </button>
+
+            {/* Mobile Filter Sheet Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setIsFilterSheetOpen(true)}
+              className="md:hidden px-3 py-2 text-xs font-bold rounded-control flex items-center gap-1.5 transition-all bg-surface-muted border border-border text-foreground hover:bg-border shrink-0 min-h-[44px]"
+              aria-label="Open filter settings"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+              <span>Filter</span>
+              {activeFilterCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-mono">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
           </div>
 
-          {/* Filters Row */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Desktop Filters Row (Hidden on mobile, mobile uses bottom sheet) */}
+          <div className="hidden md:flex flex-wrap items-center gap-2 w-full md:w-auto">
             {/* City Dropdown */}
             <select
               value={cityFilter}
@@ -408,20 +440,26 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
       </div>
 
       {/* Main Split Layout: Results List + Interactive Pan-India Map Preview */}
-      <div className="flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
-        {/* Left: Listings Column (7 cols) */}
-        <div className="lg:col-span-7 p-4 sm:p-6 overflow-y-auto space-y-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground pb-2">
+      <div className="flex-1 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden relative">
+        {/* Left: Listings Column (7 cols on desktop, full on mobile when List view selected) */}
+        <div
+          className={`lg:col-span-7 p-3 sm:p-6 overflow-y-auto space-y-4 pb-28 md:pb-6 ${
+            mobileTab === 'map' ? 'hidden lg:block' : 'block'
+          }`}
+        >
+          <div className="flex items-center justify-between text-xs text-muted-foreground pb-1">
             <span className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-emerald-600" />
-              Showing <strong className="text-foreground">{filteredSpaces.length}</strong> verified parking spaces{' '}
-              {customerCoords
-                ? 'near your location'
-                : cityFilter === 'all'
-                  ? 'across India'
-                  : `in ${cityFilter}`}
+              <Shield className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>
+                Showing <strong className="text-foreground">{filteredSpaces.length}</strong> spots{' '}
+                {customerCoords
+                  ? 'near you'
+                  : cityFilter === 'all'
+                    ? 'across India'
+                    : `in ${cityFilter}`}
+              </span>
             </span>
-            {(destination || cityFilter !== 'all' || vehicleFilter !== 'all' || evOnly || customerCoords) && (
+            {(destination || cityFilter !== 'all' || vehicleFilter !== 'all' || evOnly || customerCoords || maxPrice < 200) && (
               <button
                 onClick={() => {
                   setDestination('');
@@ -436,13 +474,13 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                 }}
                 className="text-primary hover:underline font-semibold"
               >
-                Reset filters
+                Reset
               </button>
             )}
           </div>
 
           {filteredSpaces.length === 0 ? (
-            <div className="bg-surface rounded-card p-12 border border-border text-center space-y-3">
+            <div className="bg-surface rounded-card p-10 border border-border text-center space-y-3">
               <div className="p-3 bg-surface-muted text-muted-foreground rounded-full w-fit mx-auto">
                 <Car className="w-8 h-8 stroke-1" />
               </div>
@@ -464,13 +502,13 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                   setMaxRadiusKm(null);
                   setSortBy('price_asc');
                 }}
-                className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-control shadow transition-colors"
+                className="px-4 py-2.5 bg-primary text-white text-xs font-semibold rounded-control shadow transition-colors min-h-[44px]"
               >
                 Show All Available Spaces
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {filteredSpaces.map((space) => {
                 const isSelected = selectedSpaceId === space.id;
                 return (
@@ -482,7 +520,7 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                     }`}
                   >
                     {/* Thumbnail */}
-                    <div className="sm:w-48 h-44 sm:h-auto bg-surface-muted relative shrink-0">
+                    <div className="w-full sm:w-48 h-48 sm:h-auto bg-surface-muted relative shrink-0">
                       <img
                         src={
                           space.photos?.[0]?.storage_path ||
@@ -491,14 +529,14 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                         alt={space.title}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-xs text-white px-2.5 py-1 rounded-control text-xs font-bold font-mono shadow-xs">
+                      <div className="absolute top-2.5 left-2.5 bg-black/85 backdrop-blur-xs text-white px-2.5 py-1 rounded-control text-xs font-bold font-mono shadow-xs">
                         ₹{space.hourly_rate}/hr
                       </div>
 
                       {/* Distance Pill over image if GPS is active */}
                       {space.distanceKm !== undefined && (
-                        <div className="absolute bottom-2 left-2 bg-blue-600/95 backdrop-blur-xs text-white px-2 py-0.5 rounded-control text-[10px] font-bold font-mono shadow flex items-center gap-1">
-                          <Navigation className="w-2.5 h-2.5 fill-white" />
+                        <div className="absolute bottom-2.5 left-2.5 bg-blue-600/95 backdrop-blur-xs text-white px-2.5 py-0.5 rounded-control text-[11px] font-bold font-mono shadow flex items-center gap-1">
+                          <Navigation className="w-3 h-3 fill-white" />
                           <span>{space.distanceText}</span>
                         </div>
                       )}
@@ -509,10 +547,10 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       <div>
                         <div className="flex items-center gap-1.5 text-xs font-semibold text-primary mb-1">
                           <MapPin className="w-3.5 h-3.5 shrink-0" />
-                          <span>
+                          <span className="line-clamp-1">
                             {space.property?.area}, {space.property?.city || 'India'}
                           </span>
-                          <span className="text-muted-foreground capitalize">• {space.parking_type}</span>
+                          <span className="text-muted-foreground capitalize shrink-0">• {space.parking_type}</span>
                         </div>
                         <h3 className="text-sm sm:text-base font-bold text-foreground hover:text-primary transition-colors">
                           <Link href={`/parking/${space.id}`}>{space.title}</Link>
@@ -523,19 +561,19 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       </div>
 
                       {/* Badges & Actions */}
-                      <div className="pt-3 border-t border-border flex items-center justify-between">
+                      <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" /> Verified Spot
+                            <CheckCircle2 className="w-3 h-3" /> Verified
                           </span>
 
                           {/* Distance Badge with walking estimate */}
                           {space.distanceKm !== undefined && (
                             <span className="text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 font-mono">
                               <Navigation className="w-2.5 h-2.5 text-blue-600" />
-                              <span>{space.distanceText} away</span>
-                              <span className="text-blue-500 font-sans font-normal">
-                                (~{space.walkingTimeMinutes}m walk)
+                              <span>{space.distanceText}</span>
+                              <span className="text-blue-500 font-sans font-normal hidden xs:inline">
+                                (~{space.walkingTimeMinutes}m)
                               </span>
                             </span>
                           )}
@@ -552,9 +590,9 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
 
                         <Link
                           href={`/parking/${space.id}`}
-                          className="px-3.5 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow transition-colors flex items-center gap-1 shrink-0 ml-2"
+                          className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow transition-colors flex items-center gap-1 shrink-0 min-h-[44px]"
                         >
-                          <span>Book Spot</span>
+                          <span>Book</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
@@ -566,17 +604,21 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
           )}
         </div>
 
-        {/* Right: Interactive Mobility Map Preview (5 cols) */}
-        <div className="hidden lg:block lg:col-span-5 border-l border-border bg-slate-100 p-4 relative">
-          <div className="h-full w-full rounded-card overflow-hidden bg-slate-200 border border-border relative flex flex-col items-center justify-center">
+        {/* Right: Interactive Mobility Map Preview (5 cols on desktop, full screen on mobile when Map selected) */}
+        <div
+          className={`lg:col-span-5 border-l border-border bg-slate-100 p-2 sm:p-4 relative min-h-[calc(100vh-140px)] lg:min-h-0 ${
+            mobileTab === 'list' ? 'hidden lg:block' : 'block'
+          }`}
+        >
+          <div className="h-full w-full rounded-card overflow-hidden bg-slate-200 border border-border relative flex flex-col items-center justify-center min-h-[500px]">
             {/* Visual India Map Grid */}
             <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-70"></div>
 
             {/* Map Header Overlay */}
-            <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur px-3 py-2 rounded-control border border-border shadow-xs flex items-center justify-between text-xs z-30">
-              <span className="font-semibold text-foreground flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span>
+            <div className="absolute top-3 left-3 right-3 bg-white/95 backdrop-blur px-3 py-2 rounded-control border border-border shadow-xs flex items-center justify-between text-xs z-30">
+              <span className="font-semibold text-foreground flex items-center gap-1.5 truncate">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <span className="truncate">
                   {customerCoords
                     ? 'Nearest Parkings to Your GPS'
                     : activeCityConfig
@@ -584,12 +626,12 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       : 'Pan-India Parking Grid'}
                 </span>
               </span>
-              <span className="text-[11px] text-muted-foreground font-mono">
+              <span className="text-[11px] text-muted-foreground font-mono shrink-0 ml-2">
                 {customerCoords
                   ? `${customerCoords.lat.toFixed(2)}°N, ${customerCoords.lng.toFixed(2)}°E`
                   : activeCityConfig
-                    ? `${activeCityConfig.lat.toFixed(2)}° N, ${activeCityConfig.lng.toFixed(2)}° E`
-                    : 'All Metros Active'}
+                    ? `${activeCityConfig.lat.toFixed(2)}° N`
+                    : `${filteredSpaces.length} Spots`}
               </span>
             </div>
 
@@ -624,7 +666,7 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                     className={`absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 group z-20`}
                   >
                     <div
-                      className={`px-2.5 py-1 rounded-full text-xs font-bold shadow-md flex items-center gap-1 transition-transform ${
+                      className={`px-2.5 py-1.5 rounded-full text-xs font-bold shadow-md flex items-center gap-1 transition-transform min-h-[36px] ${
                         isSelected
                           ? 'bg-slate-900 text-white scale-110 ring-2 ring-primary'
                           : 'bg-primary text-white hover:scale-105'
@@ -634,8 +676,12 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       <span>₹{space.hourly_rate}</span>
                     </div>
 
-                    {/* Hover Card */}
-                    <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-52 bg-white p-2.5 rounded-control shadow-lg border border-border text-[11px] z-40">
+                    {/* Hover/Tap Card */}
+                    <div
+                      className={`${
+                        isSelected ? 'block' : 'hidden group-hover:block'
+                      } absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-56 bg-white p-3 rounded-card shadow-xl border border-border text-[11px] z-40`}
+                    >
                       <div className="font-bold text-foreground line-clamp-1">{space.title}</div>
                       <div className="text-muted-foreground text-[10px]">
                         {space.property?.area}, {space.property?.city}
@@ -645,7 +691,15 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                           📍 {space.distanceText} away (~{space.walkingTimeMinutes}m walk)
                         </div>
                       )}
-                      <div className="text-primary font-bold mt-1">₹{space.hourly_rate} / hr</div>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                        <span className="text-primary font-bold">₹{space.hourly_rate} / hr</span>
+                        <Link
+                          href={`/parking/${space.id}`}
+                          className="px-2.5 py-1 bg-primary text-white text-[10px] font-bold rounded-control hover:bg-primary-hover"
+                        >
+                          Book Slot
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
@@ -653,12 +707,294 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
             </div>
 
             {/* Map Disclaimer */}
-            <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur p-2.5 rounded-control border border-border text-[11px] text-muted-foreground text-center z-30">
+            <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur p-2.5 rounded-control border border-border text-[11px] text-muted-foreground text-center z-30">
               Exact residential gate pins and clearance access codes are revealed upon confirmed booking to protect host privacy.
             </div>
           </div>
         </div>
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE FLOATING PILL: LIST VS MAP TOGGLE                      */}
+      {/* ------------------------------------------------------------- */}
+      <div className="lg:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30 shadow-xl pointer-events-auto">
+        <div className="flex items-center bg-surface/95 backdrop-blur-md border border-border rounded-full p-1 shadow-md">
+          <button
+            type="button"
+            onClick={() => setMobileTab('list')}
+            className={`px-4 py-2 text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors min-h-[38px] ${
+              mobileTab === 'list'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Car className="w-3.5 h-3.5" />
+            <span>List ({filteredSpaces.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab('map')}
+            className={`px-4 py-2 text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors min-h-[38px] ${
+              mobileTab === 'map'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Map</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MOBILE FILTER BOTTOM SHEET DRAWER                             */}
+      {/* ------------------------------------------------------------- */}
+      {isFilterSheetOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsFilterSheetOpen(false)}
+          />
+
+          {/* Bottom Sheet Drawer */}
+          <div className="relative w-full max-h-[85vh] bg-surface rounded-t-2xl z-50 flex flex-col border-t border-border shadow-2xl overflow-hidden pb-safe animate-in slide-in-from-bottom duration-200">
+            {/* Drag Pill */}
+            <div className="w-12 h-1 bg-border rounded-full mx-auto my-2.5 shrink-0" />
+
+            {/* Header */}
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-primary" />
+                <h3 className="text-sm font-bold text-foreground">Filter & Sort Spaces</h3>
+                {activeFilterCount > 0 && (
+                  <span className="text-[10px] font-mono font-bold bg-primary-soft text-primary px-1.5 py-0.5 rounded-full">
+                    {activeFilterCount} active
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCityFilter('all');
+                    setVehicleFilter('all');
+                    setTypeFilter('all');
+                    setEvOnly(false);
+                    setMaxPrice(200);
+                    setSortBy('price_asc');
+                  }}
+                  className="text-xs text-primary font-semibold hover:underline"
+                >
+                  Reset All
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFilterSheetOpen(false)}
+                  className="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Filter Options */}
+            <div className="p-5 overflow-y-auto space-y-5 text-xs">
+              {/* City Selection */}
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-2">City / Metro</label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCityFilter('all')}
+                    className={`px-3 py-1.5 rounded-full border font-medium min-h-[36px] ${
+                      cityFilter === 'all'
+                        ? 'bg-primary text-white border-primary font-bold'
+                        : 'bg-surface-muted text-muted-foreground border-border'
+                    }`}
+                  >
+                    🇮🇳 All India
+                  </button>
+                  {INDIAN_CITIES.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setCityFilter(c.name)}
+                      className={`px-3 py-1.5 rounded-full border font-medium min-h-[36px] ${
+                        cityFilter.toLowerCase() === c.name.toLowerCase()
+                          ? 'bg-primary text-white border-primary font-bold'
+                          : 'bg-surface-muted text-muted-foreground border-border'
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vehicle Type */}
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-2">Vehicle Category</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'all', label: 'All Vehicles' },
+                    { id: 'car_sedan', label: 'Sedan' },
+                    { id: 'car_suv', label: 'SUV / MUV' },
+                    { id: 'car_hatchback', label: 'Hatchback' },
+                    { id: 'two_wheeler', label: 'Two-Wheeler' },
+                    { id: 'ev_four_wheeler', label: 'EV 4-Wheeler' },
+                  ].map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setVehicleFilter(v.id)}
+                      className={`p-2.5 rounded-control border text-left font-medium min-h-[44px] transition-colors ${
+                        vehicleFilter === v.id
+                          ? 'bg-primary-soft text-primary border-primary font-bold'
+                          : 'bg-surface-muted text-foreground border-border'
+                      }`}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Parking Structure */}
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-2">Structure Type</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'all', label: 'All Structures' },
+                    { id: 'covered', label: 'Covered / Stilt' },
+                    { id: 'basement', label: 'Basement' },
+                    { id: 'multi_level', label: 'Multi-Level' },
+                    { id: 'open', label: 'Open Surface' },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setTypeFilter(s.id)}
+                      className={`p-2.5 rounded-control border text-left font-medium min-h-[44px] transition-colors ${
+                        typeFilter === s.id
+                          ? 'bg-primary-soft text-primary border-primary font-bold'
+                          : 'bg-surface-muted text-foreground border-border'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* EV Charging & Amenities */}
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-2">EV Charging Facility</label>
+                <button
+                  type="button"
+                  onClick={() => setEvOnly(!evOnly)}
+                  className={`w-full p-3 rounded-control border flex items-center justify-between min-h-[44px] transition-colors ${
+                    evOnly
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold'
+                      : 'bg-surface-muted text-foreground border-border'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className={`w-4 h-4 ${evOnly ? 'text-emerald-600 fill-emerald-600' : 'text-muted-foreground'}`} />
+                    <span>Electric Vehicle (EV) Charger On-Site</span>
+                  </div>
+                  <div
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                      evOnly ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-border'
+                    }`}
+                  >
+                    {evOnly && <CheckCircle2 className="w-3.5 h-3.5" />}
+                  </div>
+                </button>
+              </div>
+
+              {/* Maximum Hourly Price Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-foreground">Max Hourly Price</label>
+                  <span className="font-mono font-bold text-sm text-primary">₹{maxPrice}/hr</span>
+                </div>
+                <input
+                  type="range"
+                  min="30"
+                  max="250"
+                  step="10"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-primary h-2 cursor-pointer"
+                />
+                <div className="flex justify-between text-[11px] text-muted-foreground font-mono">
+                  <span>₹30/hr</span>
+                  <span>₹100/hr</span>
+                  <span>₹200/hr</span>
+                  <span>₹250/hr</span>
+                </div>
+              </div>
+
+              {/* Sort Order */}
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-2">Sort Results By</label>
+                <div className="space-y-1.5">
+                  {customerCoords && (
+                    <button
+                      type="button"
+                      onClick={() => setSortBy('distance_asc')}
+                      className={`w-full p-2.5 rounded-control border text-left font-medium min-h-[44px] flex items-center justify-between ${
+                        sortBy === 'distance_asc'
+                          ? 'bg-primary-soft text-primary border-primary font-bold'
+                          : 'bg-surface-muted text-foreground border-border'
+                      }`}
+                    >
+                      <span>📍 Nearest to GPS First</span>
+                      {sortBy === 'distance_asc' && <CheckCircle2 className="w-4 h-4" />}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('price_asc')}
+                    className={`w-full p-2.5 rounded-control border text-left font-medium min-h-[44px] flex items-center justify-between ${
+                      sortBy === 'price_asc'
+                        ? 'bg-primary-soft text-primary border-primary font-bold'
+                        : 'bg-surface-muted text-foreground border-border'
+                    }`}
+                  >
+                    <span>Price: Low to High</span>
+                    {sortBy === 'price_asc' && <CheckCircle2 className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('price_desc')}
+                    className={`w-full p-2.5 rounded-control border text-left font-medium min-h-[44px] flex items-center justify-between ${
+                      sortBy === 'price_desc'
+                        ? 'bg-primary-soft text-primary border-primary font-bold'
+                        : 'bg-surface-muted text-foreground border-border'
+                    }`}
+                  >
+                    <span>Price: High to Low</span>
+                    {sortBy === 'price_desc' && <CheckCircle2 className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Apply Action */}
+            <div className="p-4 border-t border-border bg-surface shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsFilterSheetOpen(false)}
+                className="w-full py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-control shadow transition-colors flex items-center justify-center gap-2 min-h-[48px]"
+              >
+                <span>Show {filteredSpaces.length} Available Spaces</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

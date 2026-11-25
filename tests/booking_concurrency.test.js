@@ -86,8 +86,9 @@ describe('ParkBnB Booking Engine & Concurrency Protection', () => {
   });
 
   test('Pricing calculation calculates server-side rates, commission, and GST', () => {
-    const start = new Date(Date.now() + 3600000).toISOString();
-    const end = new Date(Date.now() + 5 * 3600000).toISOString(); // 4 hours
+    const baseNow = Date.now();
+    const start = new Date(baseNow + 3600000).toISOString();
+    const end = new Date(baseNow + 5 * 3600000).toISOString(); // 4 hours
     const pricing = store.calculatePricing(space, start, end);
 
     assert.equal(pricing.totalHours, 4);

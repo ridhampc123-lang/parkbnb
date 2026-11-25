@@ -177,6 +177,7 @@ export interface Booking {
   cancelled_at?: string | null;
   check_in_at?: string | null;
   check_out_at?: string | null;
+  gate_status?: 'booked' | 'checked_in' | 'checked_out' | 'overstay';
   overstay_minutes?: number | null;
   overstay_amount?: number | null;
   created_at: string;
@@ -207,8 +208,53 @@ export interface Review {
   rating: number;
   comment?: string | null;
   is_approved: boolean;
+  is_reported?: boolean;
+  report_reason?: string | null;
+  response?: ReviewResponse | null;
   created_at: string;
   customer?: Profile;
+}
+
+export interface ReviewResponse {
+  id: string;
+  review_id: string;
+  provider_id: string;
+  response_text: string;
+  created_at: string;
+}
+
+export interface InAppNotification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'booking' | 'reminder' | 'payment' | 'support' | 'security' | 'system';
+  link?: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface AvailabilityBlock {
+  id: string;
+  space_id: string;
+  provider_id: string;
+  start_time: string;
+  end_time: string;
+  reason: string;
+  created_at: string;
+}
+
+export interface RefundRecord {
+  id: string;
+  booking_id: string;
+  booking_reference: string;
+  customer_id: string;
+  amount: number;
+  reason: string;
+  status: 'requested' | 'processing' | 'completed' | 'rejected';
+  transaction_reference?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SupportTicket {
@@ -231,7 +277,7 @@ export interface AuditLogEntry {
   timestamp: string;
   operator_email: string;
   action: string;
-  category: 'auth' | 'verification' | 'user' | 'host' | 'space' | 'booking' | 'payout' | 'dispute' | 'settings' | 'privacy_lookup';
+  category: 'auth' | 'verification' | 'user' | 'host' | 'space' | 'booking' | 'payout' | 'dispute' | 'support' | 'settings' | 'privacy_lookup' | 'privacy' | 'financial' | 'system';
   target_id?: string;
   target_name?: string;
   details: string;

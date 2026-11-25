@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Car,
-  MapPin,
   Calendar,
-  Shield,
   LifeBuoy,
   User,
   LogOut,
@@ -15,7 +13,9 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  ExternalLink
+  CreditCard,
+  Bell,
+  ShieldCheck
 } from 'lucide-react';
 import { logoutAction } from '@/server/actions/auth-actions';
 
@@ -33,10 +33,13 @@ export function UserNavbar({ user }: UserNavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/account', label: 'Overview', icon: User },
-    { href: '/account/bookings', label: 'My Bookings', icon: Calendar },
-    { href: '/account/vehicles', label: 'My Vehicles', icon: Car },
-    { href: '/account/support', label: 'Support & Disputes', icon: LifeBuoy },
+    { href: '/account', label: 'Overview', icon: LayoutDashboard },
+    { href: '/account/bookings', label: 'Bookings', icon: Calendar },
+    { href: '/account/vehicles', label: 'Vehicles', icon: Car },
+    { href: '/account/payments', label: 'Payments', icon: CreditCard },
+    { href: '/account/notifications', label: 'Alerts', icon: Bell },
+    { href: '/account/support', label: 'Support', icon: LifeBuoy },
+    { href: '/account/profile', label: 'Profile', icon: User },
   ];
 
   return (
@@ -54,12 +57,12 @@ export function UserNavbar({ user }: UserNavbarProps) {
               </span>
             </Link>
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
-              User Portal
+              Customer Portal
             </span>
           </div>
 
           {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+          <nav className="hidden md:flex items-center space-x-1 lg:space-x-1.5">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -67,7 +70,7 @@ export function UserNavbar({ user }: UserNavbarProps) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-semibold transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control text-xs font-semibold transition-all ${
                     isActive
                       ? 'bg-primary-soft text-primary shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-surface-muted'
@@ -85,7 +88,7 @@ export function UserNavbar({ user }: UserNavbarProps) {
             {/* Find Parking Search CTA */}
             <Link
               href="/search"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-control bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-control bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors"
             >
               <Search className="w-3.5 h-3.5" />
               <span>Find Parking</span>
@@ -104,15 +107,15 @@ export function UserNavbar({ user }: UserNavbarProps) {
             )}
 
             {/* User Profile Pill */}
-            <div className="flex items-center gap-2 pl-2 border-l border-border">
+            <Link href="/account/profile" className="flex items-center gap-2 pl-2 border-l border-border hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded-full bg-primary-soft text-primary font-bold text-xs flex items-center justify-center border border-primary/20">
                 {user.fullName?.charAt(0) || 'U'}
               </div>
               <div className="text-left text-xs leading-tight hidden lg:block">
-                <div className="font-bold text-foreground truncate max-w-[120px]">{user.fullName}</div>
-                <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">{user.email}</div>
+                <div className="font-bold text-foreground truncate max-w-[110px]">{user.fullName}</div>
+                <div className="text-[10px] text-muted-foreground truncate max-w-[110px]">Verified Driver</div>
               </div>
-            </div>
+            </Link>
 
             {/* Logout Action */}
             <form action={logoutAction} className="inline-flex items-center">
@@ -205,4 +208,3 @@ export function UserNavbar({ user }: UserNavbarProps) {
     </header>
   );
 }
-

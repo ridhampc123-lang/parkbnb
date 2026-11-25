@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
 import { vehicleSchema } from '@/lib/validation/schemas';
-import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
 import { CustomerVehicle } from '@/types/database';
 
 export async function addVehicleAction(formData: FormData) {
@@ -25,7 +25,6 @@ export async function addVehicleAction(formData: FormData) {
     return { error: validation.error.errors[0].message };
   }
 
-  const store = getLocalStore();
   const vehicle: CustomerVehicle = {
     id: 'veh-' + Math.random().toString(36).substring(2, 9),
     customer_id: session.user.id,
@@ -37,7 +36,7 @@ export async function addVehicleAction(formData: FormData) {
     created_at: new Date().toISOString(),
   };
 
-  store.createVehicle(vehicle);
+  await repository.createVehicle(vehicle);
   revalidatePath('/account/vehicles');
   return { success: true, vehicle };
 }
@@ -48,8 +47,7 @@ export async function deleteVehicleAction(vehicleId: string) {
     return { error: 'Unauthorized' };
   }
 
-  const store = getLocalStore();
-  const success = store.deleteVehicle(vehicleId, session.user.id);
+  const success = await repository.deleteVehicle(vehicleId, session.user.id);
   if (!success) {
     return { error: 'Unable to remove vehicle. Resource not found or permission denied.' };
   }

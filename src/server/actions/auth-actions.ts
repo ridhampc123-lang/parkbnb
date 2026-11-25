@@ -8,9 +8,10 @@ import { getServerSession } from '@/lib/auth/session';
 import { loginSchema, registerSchema } from '@/lib/validation/schemas';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getLocalStore } from '@/lib/store/marketplace-store';
-import { Profile, ProviderProfile } from '@/types/database';
+import { Profile, ProviderProfile, CustomerVehicle, VehicleType } from '@/types/database';
 import { signSessionToken, hashPassword } from '@/lib/auth/session-token';
 import { generateCustomerPublicId } from '@/lib/privacy/customer-privacy';
+import { verifyOtpAction } from './otp-actions';
 
 export async function loginAction(formData: FormData) {
   const email = (formData.get('email') as string)?.trim().toLowerCase();
@@ -53,7 +54,7 @@ export async function loginAction(formData: FormData) {
     }
   }
 
-  // 2. Reliable Zero-Failure Fallback: Verify with cryptographically hashed credential store
+  // 2. Verify with cryptographically hashed credential store (scrypt constant-time verification)
   if (!authenticatedProfile) {
     const { verified, profile } = store.verifyUserCredentials(email, password);
     if (verified && profile) {
@@ -61,18 +62,28 @@ export async function loginAction(formData: FormData) {
     }
   }
 
-  // 3. Fallback for bootstrap profiles if user profile exists
+  // 3. Reject if credentials do not match with clear, actionable warnings
   if (!authenticatedProfile) {
-    const localProfile = store.getProfileByEmail(email);
-    // If profile exists without registered credentials (legacy), allow authentication with clean password
-    if (localProfile && password && password.length >= 6) {
-      authenticatedProfile = localProfile;
+    const existingProfile = store.getProfileByEmail(email);
+    if (existingProfile) {
+      const cred = store.getAuthCredential(email);
+      if (!cred || !cred.passwordHash) {
+        return {
+          error: 'This account was created via Mobile OTP without a password. Please use Mobile OTP Sign In, or set a password below to continue.',
+          code: 'NO_PASSWORD_SET',
+          phone: existingProfile.phone || undefined,
+        };
+      }
+      return {
+        error: 'Incorrect password entered. If you forgot your password, you can sign in directly using Mobile OTP.',
+        code: 'INVALID_PASSWORD',
+        phone: existingProfile.phone || undefined,
+      };
     }
-  }
-
-  // 4. If neither matches, return clean, helpful error message
-  if (!authenticatedProfile) {
-    return { error: 'Invalid email or password. Please check your credentials or register.' };
+    return {
+      error: 'Invalid email or password. Please check your credentials or register for a new account.',
+      code: 'ACCOUNT_NOT_FOUND',
+    };
   }
 
   // 5. Set cryptographically signed session cookie (30 days persistent)
@@ -316,4 +327,156 @@ export async function updateHostPayoutDetailsAction(formData: FormData) {
   revalidatePath('/admin/hosts');
 
   return { success: true };
+}
+
+/**
+ * Direct Mobile OTP Customer Login Action
+ */
+export async function customerLoginWithOtpAction(params: { phone: string; otp: string }) {
+  const result = await verifyOtpAction(params);
+  if (result.error) {
+    return { error: result.error };
+  }
+  return {
+    success: true,
+    role: result.profile?.role || 'customer',
+    userId: result.profile?.id,
+  };
+}
+
+/**
+ * Set or Reset Account Password via Mobile OTP Verification
+ */
+export async function setAccountPasswordWithOtpAction(params: {
+  phone: string;
+  otp: string;
+  newPassword: string;
+  email?: string;
+}) {
+  const { phone, otp, newPassword, email } = params;
+
+  if (!newPassword || newPassword.length < 6) {
+    return { error: 'Password must be at least 6 characters long.' };
+  }
+
+  // 1. Verify OTP first
+  const otpRes = await verifyOtpAction({
+    phone,
+    otp,
+    customerDetails: email ? { email } : undefined,
+  });
+
+  if (otpRes.error || !otpRes.profile) {
+    return { error: otpRes.error || 'Failed to verify mobile OTP.' };
+  }
+
+  // 2. Hash and save password
+  const store = getLocalStore();
+  const { hash, salt } = hashPassword(newPassword);
+  const targetEmail = (email || otpRes.profile.email || `${phone.replace(/\D/g, '').slice(-10)}@phone.parkbnb.in`).toLowerCase().trim();
+
+  store.saveAuthCredentials({
+    userId: otpRes.profile.id,
+    email: targetEmail,
+    passwordHash: hash,
+    salt,
+    role: otpRes.profile.role,
+    fullName: otpRes.profile.full_name,
+    phone: otpRes.profile.phone,
+    createdAt: new Date().toISOString(),
+  });
+
+  // Ensure profile email is updated if new email was provided
+  if (email && otpRes.profile.email !== targetEmail) {
+    store.updateProfile(otpRes.profile.id, { email: targetEmail });
+  }
+
+  store.recordAuditLog({
+    operator_email: targetEmail,
+    action: 'PASSWORD_SET_VIA_OTP',
+    category: 'auth',
+    target_id: otpRes.profile.id,
+    target_name: otpRes.profile.full_name,
+    details: 'Customer established account password via mobile OTP verification.',
+  });
+
+  return { success: true, role: otpRes.profile.role };
+}
+
+/**
+ * Complete Customer Onboarding from Checkout (Full Name, Email, Password & Vehicle)
+ */
+export async function completeCustomerOnboardingAction(params: {
+  fullName: string;
+  email?: string;
+  password?: string;
+  vehiclePlate: string;
+  vehicleType?: VehicleType;
+}) {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || !session.user) {
+    return { error: 'Authentication required. Please verify your mobile number.' };
+  }
+
+  const { fullName, email, password, vehiclePlate, vehicleType } = params;
+
+  if (!fullName || fullName.trim().length < 2) {
+    return { error: 'Please enter your full legal name.' };
+  }
+
+  if (!vehiclePlate || vehiclePlate.trim().length < 4) {
+    return { error: 'Please enter a valid vehicle license plate number.' };
+  }
+
+  const store = getLocalStore();
+
+  // 1. Update customer profile details
+  const updates: Partial<Profile> = {
+    full_name: fullName.trim(),
+  };
+  if (email && email.trim()) {
+    updates.email = email.trim().toLowerCase();
+  }
+  store.updateProfile(session.user.id, updates);
+
+  // 2. If password provided, save credentials for email sign-in
+  if (password && password.length >= 6) {
+    const credEmail = (email?.trim() || session.profile?.email || `${session.user.phone}@phone.parkbnb.in`).toLowerCase();
+    const { hash, salt } = hashPassword(password);
+    store.saveAuthCredentials({
+      userId: session.user.id,
+      email: credEmail,
+      passwordHash: hash,
+      salt,
+      role: 'customer',
+      fullName: fullName.trim(),
+      phone: session.user.phone || null,
+      createdAt: new Date().toISOString(),
+    });
+
+    store.recordAuditLog({
+      operator_email: credEmail,
+      action: 'PASSWORD_SET_ON_CHECKOUT',
+      category: 'auth',
+      target_id: session.user.id,
+      target_name: fullName.trim(),
+      details: 'Customer created account password during booking checkout.',
+    });
+  }
+
+  // 3. Save vehicle into customer smart memory
+  const cleanPlate = vehiclePlate.trim().toUpperCase();
+  const existingVehicles = store.getVehiclesByCustomer(session.user.id);
+  const vehicleId = 'veh-' + Math.random().toString(36).substring(2, 9);
+  const newVehicle: CustomerVehicle = {
+    id: vehicleId,
+    customer_id: session.user.id,
+    vehicle_type: vehicleType || 'car_sedan',
+    registration_number: cleanPlate,
+    is_default: existingVehicles.length === 0,
+    created_at: new Date().toISOString(),
+  };
+  store.createVehicle(newVehicle);
+
+  return { success: true, vehicle: newVehicle };
 }

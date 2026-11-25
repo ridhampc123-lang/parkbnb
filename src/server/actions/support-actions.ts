@@ -2,7 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
-import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
+import { SupportTicket } from '@/types/database';
 
 export async function createSupportTicketAction(formData: FormData) {
   const session = await getServerSession();
@@ -19,10 +20,10 @@ export async function createSupportTicketAction(formData: FormData) {
     return { error: 'Please enter a descriptive subject for your ticket (min 5 characters).' };
   }
 
-  const store = getLocalStore();
   const ticketNum = 'TKT-' + Math.floor(100000 + Math.random() * 900000);
 
-  const ticket = store.createSupportTicket({
+  const ticket: SupportTicket = {
+    id: 'tkt-' + Math.random().toString(36).substring(2, 9),
     ticket_number: ticketNum,
     user_id: session.user.id,
     booking_id,
@@ -30,10 +31,14 @@ export async function createSupportTicketAction(formData: FormData) {
     category: category || 'general',
     priority,
     status: 'open',
-  });
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const created = await repository.createSupportTicket(ticket);
 
   revalidatePath('/account/support');
   revalidatePath('/admin/support');
 
-  return { success: true, ticket };
+  return { success: true, ticket: created };
 }

@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/auth/session';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
-import { VerificationStatus, PlatformSettings } from '@/types/database';
+import { VerificationStatus, PlatformSettings, UserRole } from '@/types/database';
 import { hasPermission, isStaffRole } from '@/lib/auth/rbac';
 import { signSessionToken } from '@/lib/auth/session-token';
 
@@ -36,12 +36,47 @@ export async function adminLoginAction(prevState: { error?: string } | null, for
           .eq('id', data.user.id)
           .single();
 
-        if (!isStaffRole(profile?.role)) {
+        let currentProfile = profile;
+        let userRole = currentProfile?.role;
+
+        // Auto-heal primary admin email if profile record is missing or not yet marked as super_admin
+        const primaryAdminEmail = (process.env.ADMIN_INITIAL_EMAIL || 'admin@parkbnb.in').toLowerCase();
+        if ((!userRole || !isStaffRole(userRole)) && email === primaryAdminEmail) {
+          const { data: upsertedProfile } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              customer_public_id: 'PBN-C-ADMIN001',
+              full_name: data.user.user_metadata?.full_name || 'ParkBnB Administrator',
+              email: email,
+              role: 'super_admin',
+              phone_verified: true,
+              status: 'active',
+              updated_at: new Date().toISOString(),
+            })
+            .select('role, full_name, status, phone')
+            .single();
+
+          if (upsertedProfile) {
+            currentProfile = upsertedProfile;
+            userRole = upsertedProfile.role;
+          } else {
+            userRole = 'super_admin';
+            currentProfile = {
+              role: 'super_admin',
+              full_name: data.user.user_metadata?.full_name || 'ParkBnB Administrator',
+              status: 'active',
+              phone: '',
+            } as any;
+          }
+        }
+
+        if (!isStaffRole(userRole)) {
           await supabase.auth.signOut();
           return { error: 'Access Denied: This console is strictly restricted to authorized ParkBnB staff and administrators.' };
         }
 
-        if (profile?.status === 'suspended') {
+        if (currentProfile?.status === 'suspended') {
           await supabase.auth.signOut();
           return { error: 'Account Suspended: Contact Super Administrator for assistance.' };
         }
@@ -51,15 +86,15 @@ export async function adminLoginAction(prevState: { error?: string } | null, for
           action: 'STAFF_LOGIN_SUCCESS',
           category: 'auth',
           target_id: data.user.id,
-          target_name: profile?.full_name || 'Staff Member',
-          details: `Staff member logged in with role: ${profile?.role || 'admin'}`,
+          target_name: currentProfile?.full_name || 'Staff Member',
+          details: `Staff member logged in with role: ${userRole || 'admin'}`,
         });
 
         const { token } = signSessionToken({
           sub: data.user.id,
-          phone: (profile as any)?.phone || '',
-          name: profile?.full_name || 'Staff Member',
-          role: profile?.role || 'admin',
+          phone: (currentProfile as any)?.phone || '',
+          name: currentProfile?.full_name || 'Staff Member',
+          role: userRole || 'admin',
         });
         const cookieStore = await cookies();
         cookieStore.set('parkbnb_auth_token', token, {
@@ -79,42 +114,42 @@ export async function adminLoginAction(prevState: { error?: string } | null, for
     }
   }
 
-  // 2. Development / Local Staff Check
-  const localStaff = store.getProfileByEmail(email);
-  if (localStaff && isStaffRole(localStaff.role)) {
-    if (password === 'Admin@12345') {
-      const { token } = signSessionToken({
-        sub: localStaff.id,
-        phone: localStaff.phone,
-        name: localStaff.full_name,
-        role: localStaff.role,
-      });
-
-      const cookieStore = await cookies();
-      cookieStore.set('parkbnb_auth_token', token, {
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 86400 * 30,
-        sameSite: 'lax',
-      });
-
-      store.recordAuditLog({
-        operator_email: email,
-        action: 'STAFF_LOGIN_SUCCESS',
-        category: 'auth',
-        target_id: localStaff.id,
-        target_name: localStaff.full_name,
-        details: `Local staff authenticated with role: ${localStaff.role}`,
-      });
-
-      redirect('/admin');
-    } else {
-      return { error: 'Invalid staff credentials. Please check your password.' };
+  // 2. Cryptographic staff credential verification (scrypt hash + salt)
+  const { verified, profile: verifiedProfile } = store.verifyUserCredentials(email, password);
+  if (verified && verifiedProfile && isStaffRole(verifiedProfile.role)) {
+    if (verifiedProfile.status === 'suspended') {
+      return { error: 'Account Suspended: Contact Super Administrator for assistance.' };
     }
+
+    const { token } = signSessionToken({
+      sub: verifiedProfile.id,
+      phone: verifiedProfile.phone,
+      name: verifiedProfile.full_name,
+      role: verifiedProfile.role,
+    });
+
+    const cookieStore = await cookies();
+    cookieStore.set('parkbnb_auth_token', token, {
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 86400 * 30,
+      sameSite: 'lax',
+    });
+
+    store.recordAuditLog({
+      operator_email: email,
+      action: 'STAFF_LOGIN_SUCCESS',
+      category: 'auth',
+      target_id: verifiedProfile.id,
+      target_name: verifiedProfile.full_name,
+      details: `Staff member authenticated with role: ${verifiedProfile.role}`,
+    });
+
+    redirect('/admin');
   }
 
-  return { error: 'Access Denied: Unrecognized staff credentials.' };
+  return { error: 'Access Denied: Invalid staff credentials.' };
 }
 
 // -------------------------------------------------------------
@@ -171,6 +206,80 @@ export async function toggleUserStatusAction(params: {
   revalidatePath('/admin/users');
   revalidatePath('/admin');
   return { success: true, status: updated.status };
+}
+
+/**
+ * Changes a user's operational role across the platform.
+ * Requires admin:full_access or super_admin permissions.
+ */
+export async function updateUserRoleAction(params: {
+  userId: string;
+  role: UserRole;
+  reason?: string;
+}) {
+  const session = await getServerSession();
+  if (
+    !session.isAuthenticated ||
+    (!hasPermission(session, 'admin:full_access') &&
+      !hasPermission(session, 'super_admin:manage_roles') &&
+      session.role !== 'admin' &&
+      session.role !== 'super_admin')
+  ) {
+    return { error: 'Forbidden: Administrator privileges required to reassign roles.' };
+  }
+
+  const store = getLocalStore();
+  const profile = store.getProfileById(params.userId);
+  if (!profile) {
+    return { error: 'User record not found.' };
+  }
+
+  const oldRole = profile.role;
+  profile.role = params.role;
+  profile.updated_at = new Date().toISOString();
+  store.updateProfile(params.userId, { role: params.role });
+
+  // If changing to provider, ensure provider_profile exists
+  if (params.role === 'provider' && !store.getProviderProfile(params.userId)) {
+    store.saveProviderProfile({
+      id: params.userId,
+      business_name: profile.full_name,
+      provider_type: 'individual_residential',
+      verification_status: 'approved',
+      commission_rate: 0.15,
+      payout_preference: 'bank_transfer',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  // Also update Supabase database if connected
+  const supabase = await getSupabaseServerClient();
+  if (supabase) {
+    try {
+      await supabase
+        .from('profiles')
+        .update({ role: params.role, updated_at: new Date().toISOString() })
+        .eq('id', params.userId);
+    } catch (err) {
+      console.warn('[Admin] Failed to sync role to Supabase:', err);
+    }
+  }
+
+  store.recordAuditLog({
+    operator_email: session.user?.email || 'admin@parkbnb.in',
+    action: 'USER_ROLE_UPDATED',
+    category: 'user',
+    target_id: params.userId,
+    target_name: profile.full_name,
+    details: 'Role changed from ' + oldRole + ' to ' + params.role + '. Reason: ' + (params.reason || 'Admin modification via console'),
+  });
+
+  revalidatePath('/admin/users');
+  revalidatePath('/admin');
+  revalidatePath('/admin/hosts');
+
+  return { success: true, updatedRole: params.role };
 }
 
 // -------------------------------------------------------------

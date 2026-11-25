@@ -6,6 +6,8 @@ import { getSupabaseConfigStatus } from '@/lib/supabase/config';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { Database, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLayout({
   children,
 }: {

@@ -59,7 +59,49 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Step 4: Link or promote user in public.profiles to 'super_admin'
+-- Step 4: Ensure admin user exists in auth.users with password 'Admin@2026!'
+DO $$
+DECLARE
+  new_admin_id uuid := 'a0000000-0000-0000-0000-000000000001'::uuid;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE email = 'admin@parkbnb.in') THEN
+    INSERT INTO auth.users (
+      instance_id,
+      id,
+      aud,
+      role,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      created_at,
+      updated_at,
+      confirmation_token,
+      email_change,
+      email_change_token_new,
+      recovery_token
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000'::uuid,
+      new_admin_id,
+      'authenticated',
+      'authenticated',
+      'admin@parkbnb.in',
+      crypt('Admin@2026!', gen_salt('bf')),
+      now(),
+      '{"provider": "email", "providers": ["email"]}'::jsonb,
+      '{"full_name": "ParkBnB Administrator"}'::jsonb,
+      now(),
+      now(),
+      '',
+      '',
+      '',
+      ''
+    );
+  END IF;
+END $$;
+
+-- Step 5: Link or promote user in public.profiles to 'super_admin'
 INSERT INTO public.profiles (
   id,
   customer_public_id,
@@ -89,7 +131,7 @@ SET role = 'super_admin',
     status = 'active',
     updated_at = now();
 
--- Step 5: Verify the admin profile
+-- Step 6: Verify the admin profile
 SELECT id, customer_public_id, full_name, email, role, status, created_at 
 FROM public.profiles 
 WHERE role IN ('admin', 'super_admin');

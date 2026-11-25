@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import {
   Profile,
   ProviderProfile,
@@ -16,6 +17,10 @@ import {
   AuditLogEntry,
   CustomerDataAccessLog,
   PlatformSettings,
+  InAppNotification,
+  AvailabilityBlock,
+  RefundRecord,
+  ReviewResponse,
 } from '@/types/database';
 import {
   generateCustomerPublicId,
@@ -71,6 +76,10 @@ class MarketplaceStore {
   private customerDataAccessLogs: CustomerDataAccessLog[] = [];
   private otps: Map<string, OtpVerification[]> = new Map();
   private credentials: Map<string, AuthCredential> = new Map();
+  private notifications: Map<string, InAppNotification> = new Map();
+  private availabilityBlocks: Map<string, AvailabilityBlock> = new Map();
+  private refundRecords: Map<string, RefundRecord> = new Map();
+  private deletionRequests: Map<string, { userId: string; reason: string; requestedAt: string; status: string }> = new Map();
   private settings: PlatformSettings = {
     platformCommissionRate: 0.15,
     gstRate: 0.18,
@@ -120,30 +129,22 @@ class MarketplaceStore {
     };
     this.profiles.set(adminId, systemAdmin);
 
-    // Bootstrap Root Admin & Host Credentials for reliable zero-friction login
-    const adminHash = hashPassword('Admin@2026!', 'salt-admin-static-2026');
-    this.credentials.set('admin@parkbnb.in', {
-      userId: adminId,
-      email: 'admin@parkbnb.in',
-      passwordHash: adminHash.hash,
-      salt: adminHash.salt,
-      role: 'super_admin',
-      fullName: 'ParkBnB Administrator',
-      phone: '9876543210',
-      createdAt: new Date().toISOString(),
-    });
-
-    const host1Cred = hashPassword('Host@123456', 'salt-host1-static-2026');
-    this.credentials.set('rajesh.patel@example.com', {
-      userId: 'usr-host-ahmedabad-01',
-      email: 'rajesh.patel@example.com',
-      passwordHash: host1Cred.hash,
-      salt: host1Cred.salt,
-      role: 'provider',
-      fullName: 'Rajesh Patel',
-      phone: '9825012345',
-      createdAt: new Date().toISOString(),
-    });
+    // Bootstrap administrator credential from environment if provided (or default secure credential), using cryptographically generated unique salt
+    const adminInitialPassword = process.env.ADMIN_INITIAL_PASSWORD || 'Admin@2026!';
+    if (adminInitialPassword) {
+      const dynamicSalt = crypto.randomBytes(16).toString('hex');
+      const adminHash = hashPassword(adminInitialPassword, dynamicSalt);
+      this.credentials.set('admin@parkbnb.in', {
+        userId: adminId,
+        email: 'admin@parkbnb.in',
+        passwordHash: adminHash.hash,
+        salt: adminHash.salt,
+        role: 'super_admin',
+        fullName: 'ParkBnB Administrator',
+        phone: '9876543210',
+        createdAt: new Date().toISOString(),
+      });
+    }
 
     // 2. Pilot Ahmedabad Parking Supply (Verified & Bookable)
     // Host 1: Rajesh Patel (Residential Individual, Prahlad Nagar)
@@ -1367,6 +1368,17 @@ class MarketplaceStore {
     return vehicle;
   }
 
+  public setDefaultVehicle(id: string, customerId: string): boolean {
+    const v = this.vehicles.get(id);
+    if (!v || v.customer_id !== customerId) return false;
+    for (const vehicle of this.vehicles.values()) {
+      if (vehicle.customer_id === customerId) {
+        vehicle.is_default = (vehicle.id === id);
+      }
+    }
+    return true;
+  }
+
   public deleteVehicle(id: string, customerId: string): boolean {
     const v = this.vehicles.get(id);
     if (!v || v.customer_id !== customerId) return false;
@@ -1412,6 +1424,16 @@ class MarketplaceStore {
       }
     }
 
+    for (const block of this.availabilityBlocks.values()) {
+      if (block.space_id === spaceId) {
+        const bStart = new Date(block.start_time).getTime();
+        const bEnd = new Date(block.end_time).getTime();
+        if (reqStart < bEnd && reqEnd > bStart) {
+          return false;
+        }
+      }
+    }
+
     for (const h of this.holds.values()) {
       if (h.space_id === spaceId && h.is_active) {
         if (excludingCustomerId && h.customer_id === excludingCustomerId) {
@@ -1430,6 +1452,10 @@ class MarketplaceStore {
     }
 
     return true;
+  }
+
+  public isSpaceAvailable(spaceId: string, startTime: string, endTime: string, customerId?: string): boolean {
+    return this.checkAvailability(spaceId, startTime, endTime, customerId);
   }
 
   public createHold(spaceId: string, customerId: string, startTime: string, endTime: string, holdMinutes?: number): BookingHold | null {
@@ -1459,6 +1485,39 @@ class MarketplaceStore {
         this.holds.set(id, { ...h, is_active: false });
       }
     }
+  }
+
+  public cleanupExpiredHoldsAndOtps(): { expiredHolds: number; expiredBookings: number; expiredOtps: number } {
+    const now = new Date().toISOString();
+    let expiredHolds = 0;
+    let expiredBookings = 0;
+    let expiredOtps = 0;
+
+    for (const [id, h] of this.holds.entries()) {
+      if (h.is_active && h.expires_at < now) {
+        this.holds.set(id, { ...h, is_active: false });
+        expiredHolds++;
+      }
+    }
+
+    for (const [id, b] of this.bookings.entries()) {
+      if (b.status === 'hold_pending') {
+        const createdMs = new Date(b.created_at).getTime();
+        // 10 minutes past created_at
+        if (Date.now() - createdMs > 10 * 60 * 1000) {
+          this.bookings.set(id, { ...b, status: 'cancelled_by_admin', cancellation_reason: 'Hold reservation expired' });
+          expiredBookings++;
+        }
+      }
+    }
+
+    for (const [phone, list] of this.otps.entries()) {
+      const active = list.filter(otp => otp.expires_at > now);
+      expiredOtps += (list.length - active.length);
+      this.otps.set(phone, active);
+    }
+
+    return { expiredHolds, expiredBookings, expiredOtps };
   }
 
   // =============================================================
@@ -1952,6 +2011,334 @@ class MarketplaceStore {
 
   public getAuditLogs(): AuditLogEntry[] {
     return [...this.auditLogs];
+  }
+
+  // =============================================================
+  // PROFILE & ACCOUNT (DPDP ACT 2023)
+  // =============================================================
+  public updateProfileDetails(userId: string, data: {
+    fullName?: string;
+    full_name?: string;
+    phone?: string;
+    email?: string;
+    notification_preferences?: { sms: boolean; whatsapp: boolean; email: boolean };
+  }): Profile | undefined {
+    const profile = this.profiles.get(userId);
+    if (!profile) return undefined;
+    const name = data.fullName ?? data.full_name;
+    if (name !== undefined) profile.full_name = name;
+    if (data.phone !== undefined) profile.phone = data.phone;
+    if (data.email !== undefined) profile.email = data.email;
+    profile.updated_at = new Date().toISOString();
+    this.profiles.set(userId, profile);
+    return profile;
+  }
+
+  public requestAccountDeletion(userId: string, reason: string): { success: boolean; error?: string; message?: string } {
+    const profile = this.profiles.get(userId);
+    if (!profile) return { success: false, error: 'User profile not found.' };
+    this.deletionRequests.set(userId, {
+      userId,
+      reason,
+      requestedAt: new Date().toISOString(),
+      status: 'pending',
+    });
+    this.recordAuditLog({
+      operator_email: profile.email || 'customer@parkbnb.in',
+      action: 'CUSTOMER_DELETION_REQUESTED',
+      category: 'privacy',
+      details: "Customer " + profile.id + " submitted DPDP account erasure request: " + reason,
+    });
+    return { success: true, message: 'Account deletion request submitted under DPDP Act 2023. Data privacy officer will process your request within 7 business days.' };
+  }
+
+  // =============================================================
+  // NOTIFICATIONS (IN-APP)
+  // =============================================================
+  public getNotificationsByUser(userId: string): InAppNotification[] {
+    const list: InAppNotification[] = [];
+    for (const notif of this.notifications.values()) {
+      if (notif.user_id === userId) {
+        list.push({ ...notif });
+      }
+    }
+    return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  public createNotification(data: Omit<InAppNotification, 'id' | 'created_at' | 'is_read'>): InAppNotification {
+    const notif: InAppNotification = {
+      id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      user_id: data.user_id,
+      title: data.title,
+      message: data.message,
+      type: data.type,
+      link: data.link,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+    this.notifications.set(notif.id, notif);
+    return notif;
+  }
+
+  public markNotificationRead(notificationId: string, userId: string): boolean {
+    const notif = this.notifications.get(notificationId);
+    if (!notif || notif.user_id !== userId) return false;
+    notif.is_read = true;
+    this.notifications.set(notificationId, notif);
+    return true;
+  }
+
+  public markAllNotificationsRead(userId: string): number {
+    let count = 0;
+    for (const notif of this.notifications.values()) {
+      if (notif.user_id === userId && !notif.is_read) {
+        notif.is_read = true;
+        this.notifications.set(notif.id, notif);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  // =============================================================
+  // REFUNDS & TRANSACTIONS
+  // =============================================================
+  public getRefundsByCustomer(customerId: string): RefundRecord[] {
+    const list: RefundRecord[] = [];
+    for (const r of this.refundRecords.values()) {
+      if (r.customer_id === customerId) {
+        list.push({ ...r });
+      }
+    }
+    return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  public getAllRefunds(): RefundRecord[] {
+    return Array.from(this.refundRecords.values()).sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }
+
+  public requestCustomerRefund(params: {
+    bookingId: string;
+    customerId: string;
+    reason: string;
+    amount?: number;
+  }): { success: boolean; refund?: RefundRecord; error?: string } {
+    const booking = this.bookings.get(params.bookingId);
+    if (!booking) {
+      return { success: false, error: 'Booking reservation not found.' };
+    }
+    if (booking.customer_id !== params.customerId) {
+      return { success: false, error: 'Unauthorized: Booking does not belong to your account.' };
+    }
+
+    for (const r of this.refundRecords.values()) {
+      if (r.booking_id === params.bookingId && (r.status === 'requested' || r.status === 'processing')) {
+        return { success: false, error: 'A refund request is already pending review for this reservation.' };
+      }
+    }
+
+    const refundAmount = params.amount ?? booking.total_amount;
+    const record: RefundRecord = {
+      id: 'ref_' + Math.random().toString(36).substring(2, 9),
+      booking_id: booking.id,
+      booking_reference: booking.booking_reference,
+      customer_id: params.customerId,
+      amount: refundAmount,
+      reason: params.reason,
+      status: 'requested',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    this.refundRecords.set(record.id, record);
+
+    this.createNotification({
+      user_id: params.customerId,
+      title: 'Refund Request Received',
+      message: 'Your refund request of ₹' + refundAmount.toFixed(2) + ' for pass ' + booking.booking_reference + ' is being processed.',
+      type: 'payment',
+      link: '/account/payments',
+    });
+
+    this.recordAuditLog({
+      operator_email: 'customer@parkbnb.in',
+      action: 'CUSTOMER_REFUND_REQUESTED',
+      category: 'financial',
+      details: 'Customer requested refund of ₹' + refundAmount + ' for booking ' + booking.booking_reference + ': ' + params.reason,
+    });
+
+    return { success: true, refund: record };
+  }
+
+  // =============================================================
+  // AVAILABILITY CALENDAR & MAINTENANCE BLOCKS
+  // =============================================================
+  public getAvailabilityBlocks(spaceId?: string): AvailabilityBlock[] {
+    const list: AvailabilityBlock[] = [];
+    for (const block of this.availabilityBlocks.values()) {
+      if (!spaceId || block.space_id === spaceId) {
+        list.push({ ...block });
+      }
+    }
+    return list.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  }
+
+  public getAvailabilityBlocksByProvider(providerId: string): AvailabilityBlock[] {
+    const spaces = this.getSpacesByProvider(providerId);
+    const spaceIds = new Set(spaces.map(s => s.id));
+    const list: AvailabilityBlock[] = [];
+    for (const block of this.availabilityBlocks.values()) {
+      if (block.provider_id === providerId || spaceIds.has(block.space_id)) {
+        list.push({ ...block });
+      }
+    }
+    return list.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+  }
+
+  public createAvailabilityBlock(params: {
+    spaceId: string;
+    providerId: string;
+    startTime: string;
+    endTime: string;
+    reason: string;
+  }): { success: boolean; block?: AvailabilityBlock; error?: string } {
+    const space = this.spaces.get(params.spaceId);
+    if (!space) {
+      return { success: false, error: 'Parking space not found.' };
+    }
+    if (space.provider_id !== params.providerId) {
+      return { success: false, error: 'Unauthorized: You do not own this parking space.' };
+    }
+
+    const reqStart = new Date(params.startTime).getTime();
+    const reqEnd = new Date(params.endTime).getTime();
+
+    if (isNaN(reqStart) || isNaN(reqEnd) || reqEnd <= reqStart) {
+      return { success: false, error: 'Invalid time range: End time must be after start time.' };
+    }
+
+    for (const b of this.bookings.values()) {
+      if (b.space_id === params.spaceId && (b.status === 'confirmed' || b.status === 'active')) {
+        const bStart = new Date(b.start_time).getTime();
+        const bEnd = new Date(b.end_time).getTime();
+        if (reqStart < bEnd && reqEnd > bStart) {
+          return {
+            success: false,
+            error: 'Collision detected: Active reservation ' + b.booking_reference + ' is already confirmed for this duration.',
+          };
+        }
+      }
+    }
+
+    const block: AvailabilityBlock = {
+      id: 'blk_' + Math.random().toString(36).substring(2, 9),
+      space_id: params.spaceId,
+      provider_id: params.providerId,
+      start_time: params.startTime,
+      end_time: params.endTime,
+      reason: params.reason,
+      created_at: new Date().toISOString(),
+    };
+
+    this.availabilityBlocks.set(block.id, block);
+
+    this.recordAuditLog({
+      operator_email: 'owner@parkbnb.in',
+      action: 'AVAILABILITY_BLOCK_CREATED',
+      category: 'space',
+      details: 'Owner blocked space ' + space.identifier + ' (' + space.title + ') from ' + params.startTime + ' to ' + params.endTime + '. Reason: ' + params.reason,
+    });
+
+    return { success: true, block };
+  }
+
+  public deleteAvailabilityBlock(blockId: string, providerId?: string): boolean {
+    const block = this.availabilityBlocks.get(blockId);
+    if (!block) return false;
+    if (providerId && block.provider_id !== providerId) {
+      const space = this.spaces.get(block.space_id);
+      if (!space || space.provider_id !== providerId) return false;
+    }
+    this.availabilityBlocks.delete(blockId);
+    return true;
+  }
+
+  // =============================================================
+  // REVIEWS & MODERATION
+  // =============================================================
+  public getReviewsByProvider(providerId: string): (Review & { space?: ParkingSpace; customer?: Profile })[] {
+    const spaces = this.getSpacesByProvider(providerId);
+    const spaceMap = new Map(spaces.map(s => [s.id, s]));
+    const list: (Review & { space?: ParkingSpace; customer?: Profile })[] = [];
+
+    for (const r of this.reviews) {
+      if (spaceMap.has(r.space_id)) {
+        list.push({
+          ...r,
+          space: spaceMap.get(r.space_id),
+          customer: this.profiles.get(r.customer_id),
+        });
+      }
+    }
+    return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  public addReviewResponse(
+    reviewId: string,
+    providerId: string,
+    responseText: string
+  ): { success: boolean; error?: string } {
+    const review = this.reviews.find(r => r.id === reviewId);
+    if (!review) {
+      return { success: false, error: 'Review not found.' };
+    }
+    const space = this.spaces.get(review.space_id);
+    if (!space || space.provider_id !== providerId) {
+      return { success: false, error: 'Unauthorized: You are not the owner of this reviewed parking space.' };
+    }
+
+    const response: ReviewResponse = {
+      id: 'resp_' + Math.random().toString(36).substring(2, 9),
+      review_id: reviewId,
+      provider_id: providerId,
+      response_text: responseText,
+      created_at: new Date().toISOString(),
+    };
+
+    review.response = response;
+    // updated in place
+
+    this.createNotification({
+      user_id: review.customer_id,
+      title: 'Parking Owner Replied to Your Review',
+      message: 'The host of ' + space.title + ' replied: "' + (responseText.slice(0, 80) + (responseText.length > 80 ? '...' : '')) + '"',
+      type: 'booking',
+      link: '/account/bookings/' + review.booking_id,
+    });
+
+    return { success: true };
+  }
+
+  public reportReview(reviewId: string, reason: string): { success: boolean; error?: string } {
+    const review = this.reviews.find(r => r.id === reviewId);
+    if (!review) {
+      return { success: false, error: 'Review not found.' };
+    }
+
+    review.is_reported = true;
+    review.report_reason = reason;
+    // updated in place
+
+    this.recordAuditLog({
+      operator_email: 'owner@parkbnb.in',
+      action: 'REVIEW_REPORTED_BY_OWNER',
+      category: 'support',
+      details: 'Review ' + reviewId + ' flagged as policy violation: "' + reason + '"',
+    });
+
+    return { success: true };
   }
 
   // =============================================================

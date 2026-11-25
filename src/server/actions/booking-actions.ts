@@ -3,6 +3,7 @@
 import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
+import { repository } from '@/lib/db/supabase-repository';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 import { Booking, CustomerVehicle, VehicleType } from '@/types/database';
 
@@ -25,8 +26,7 @@ export async function initiateBookingHoldAction(params: {
     return { error: 'Missing required reservation parameters.' };
   }
 
-  const store = getLocalStore();
-  const space = store.getSpaceById(spaceId);
+  const space = await repository.getSpaceById(spaceId);
   if (!space || space.status !== 'approved' || !space.is_active) {
     return { error: 'This parking space is currently not available for reservation.' };
   }
@@ -44,6 +44,7 @@ export async function initiateBookingHoldAction(params: {
   }
 
   // Resolve customer vehicle in smart memory
+  const store = getLocalStore();
   let resolvedVehicle: CustomerVehicle | undefined;
   if (vehicleId) {
     resolvedVehicle = store.getVehicleById(vehicleId);
@@ -54,7 +55,7 @@ export async function initiateBookingHoldAction(params: {
 
     if (!resolvedVehicle) {
       // Create and save vehicle into customer memory
-      const customerVehicles = store.getVehiclesByCustomer(session.user.id);
+      const customerVehicles = await repository.getVehiclesByCustomer(session.user.id);
       resolvedVehicle = {
         id: 'veh-' + Math.random().toString(36).substring(2, 9),
         customer_id: session.user.id,
@@ -63,7 +64,7 @@ export async function initiateBookingHoldAction(params: {
         is_default: customerVehicles.length === 0,
         created_at: new Date().toISOString(),
       };
-      store.createVehicle(resolvedVehicle);
+      await repository.createVehicle(resolvedVehicle);
     }
   }
 
@@ -72,13 +73,13 @@ export async function initiateBookingHoldAction(params: {
   }
 
   // Concurrency check & 10-minute temporary inventory reservation
-  const hold = store.createHold(spaceId, session.user.id, startTime, endTime, 10);
+  const hold = await repository.createHold(spaceId, session.user.id, startTime, endTime, 10);
   if (!hold) {
     return { error: 'This time slot is no longer available. Another driver has reserved or is booking it.' };
   }
 
   // Calculate server-side pricing independently
-  const pricing = store.calculatePricing(space, startTime, endTime);
+  const pricing = repository.calculatePricing(space, startTime, endTime);
 
   // Create temporary booking in hold_pending status
   const bookingId = 'bkg-' + Math.random().toString(36).substring(2, 9);
@@ -110,9 +111,9 @@ export async function initiateBookingHoldAction(params: {
     updated_at: new Date().toISOString(),
   };
 
-  store.createBooking(booking);
+  await repository.createBooking(booking);
 
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.user.email || 'customer',
     action: 'BOOKING_HOLD_CREATED',
     category: 'booking',
@@ -142,8 +143,7 @@ export async function confirmBookingPaymentAction(params: {
     return { error: 'Unauthorized.' };
   }
 
-  const store = getLocalStore();
-  const booking = store.getBookingById(params.bookingId);
+  const booking = await repository.getBookingById(params.bookingId);
   if (!booking) {
     return { error: 'Booking record not found.' };
   }
@@ -172,10 +172,10 @@ export async function confirmBookingPaymentAction(params: {
   }
 
   // Update status atomically to confirmed
-  store.updateBookingStatus(booking.id, 'confirmed');
+  await repository.updateBookingStatus(booking.id, 'confirmed');
 
   // Record double-entry financial ledger entries (idempotent)
-  store.recordLedgerEntry({
+  await repository.recordLedgerEntry({
     booking_id: booking.id,
     entry_type: 'CUSTOMER_PAYMENT',
     debit_account: 'GATEWAY_ESCROW',
@@ -186,7 +186,7 @@ export async function confirmBookingPaymentAction(params: {
     reference_id: params.paymentId,
   });
 
-  store.recordLedgerEntry({
+  await repository.recordLedgerEntry({
     booking_id: booking.id,
     entry_type: 'PLATFORM_COMMISSION',
     debit_account: 'PLATFORM_UNEARNED',
@@ -197,7 +197,7 @@ export async function confirmBookingPaymentAction(params: {
     reference_id: booking.id,
   });
 
-  store.recordLedgerEntry({
+  await repository.recordLedgerEntry({
     booking_id: booking.id,
     entry_type: 'PROVIDER_PAYABLE',
     debit_account: 'PLATFORM_UNEARNED',
@@ -209,9 +209,9 @@ export async function confirmBookingPaymentAction(params: {
   });
 
   // Release temporary hold
-  store.releaseHold(booking.space_id, booking.customer_id);
+  await repository.releaseHold(booking.space_id, booking.customer_id);
 
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.user.email || 'customer',
     action: 'BOOKING_PAYMENT_CONFIRMED',
     category: 'booking',
@@ -225,7 +225,8 @@ export async function confirmBookingPaymentAction(params: {
   revalidatePath('/host/bookings');
   revalidatePath('/admin/bookings');
 
-  return { success: true, booking: store.getBookingById(booking.id) };
+  const confirmedBooking = await repository.getBookingById(booking.id);
+  return { success: true, booking: confirmedBooking };
 }
 
 export async function cancelBookingAction(bookingId: string, reason: string) {
@@ -234,8 +235,7 @@ export async function cancelBookingAction(bookingId: string, reason: string) {
     return { error: 'Unauthorized.' };
   }
 
-  const store = getLocalStore();
-  const booking = store.getBookingById(bookingId);
+  const booking = await repository.getBookingById(bookingId);
   if (!booking) {
     return { error: 'Booking not found.' };
   }
@@ -251,10 +251,10 @@ export async function cancelBookingAction(bookingId: string, reason: string) {
         ? 'cancelled_by_customer'
         : 'cancelled_by_provider';
 
-  store.updateBookingStatus(bookingId, newStatus, reason);
+  await repository.updateBookingStatus(bookingId, newStatus, reason);
 
   // Record refund in financial ledger
-  store.recordLedgerEntry({
+  await repository.recordLedgerEntry({
     booking_id: booking.id,
     entry_type: 'REFUND_CUSTOMER',
     debit_account: 'PLATFORM_UNEARNED',
@@ -265,7 +265,7 @@ export async function cancelBookingAction(bookingId: string, reason: string) {
     reference_id: booking.id,
   });
 
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.user.email || 'system',
     action: 'BOOKING_CANCELLED',
     category: 'booking',
@@ -296,7 +296,7 @@ export async function extendBookingAction(params: {
     return { error: 'Booking not found or could not be extended.' };
   }
 
-  store.recordAuditLog({
+  await repository.recordAuditLog({
     operator_email: session.user.email || 'customer',
     action: 'BOOKING_EXTENDED',
     category: 'booking',
@@ -326,6 +326,14 @@ export async function customerCheckInAction(bookingId: string) {
     return { error: result.error || 'Failed to check in.' };
   }
 
+  await repository.recordAuditLog({
+    operator_email: session.user.email || 'customer',
+    action: 'GATE_CHECK_IN',
+    category: 'booking',
+    target_id: bookingId,
+    details: 'Customer verified gate arrival and checked in.',
+  });
+
   revalidatePath('/account/bookings');
   revalidatePath(`/account/bookings/${bookingId}`);
   revalidatePath('/host/bookings');
@@ -347,6 +355,14 @@ export async function customerCheckOutAction(bookingId: string) {
   if (!result.success) {
     return { error: result.error || 'Failed to check out.' };
   }
+
+  await repository.recordAuditLog({
+    operator_email: session.user.email || 'customer',
+    action: 'GATE_CHECK_OUT',
+    category: 'booking',
+    target_id: bookingId,
+    details: `Customer released spot. Overstay minutes: ${result.overstayMinutes || 0}`,
+  });
 
   revalidatePath('/account/bookings');
   revalidatePath(`/account/bookings/${bookingId}`);

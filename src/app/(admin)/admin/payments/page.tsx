@@ -1,9 +1,10 @@
 import { getLocalStore } from '@/lib/store/marketplace-store';
-import { DollarSign, ShieldAlert, ArrowDownLeft, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { DollarSign, ShieldAlert, ArrowDownLeft, ArrowUpRight, CheckCircle2, RotateCcw } from 'lucide-react';
 
 export default function AdminPaymentsPage() {
   const store = getLocalStore();
   const ledger = store.getLedgerEntries();
+  const refunds = store.getAllRefunds();
 
   const totalGrossInflow = ledger
     .filter(e => e.entry_type === 'CUSTOMER_PAYMENT')
@@ -26,7 +27,7 @@ export default function AdminPaymentsPage() {
     .reduce((sum, e) => sum + e.amount, 0);
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-8 max-w-7xl">
       <div>
         <span className="text-[11px] font-mono text-purple-400 uppercase tracking-wider font-semibold">
           Financial Governance
@@ -62,6 +63,65 @@ export default function AdminPaymentsPage() {
           <div className="text-2xl font-black text-rose-400 font-mono">₹{totalRefunds.toFixed(2)}</div>
           <span className="text-[11px] text-slate-500">Cancellations & dispute refunds</span>
         </div>
+      </div>
+
+      {/* Customer Refund Requests Queue */}
+      <div className="bg-slate-900 rounded-card border border-slate-800 overflow-hidden shadow-sm">
+        <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <RotateCcw className="w-4 h-4 text-rose-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Customer Refund Requests & Disputes ({refunds.length})
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-500 font-mono">Self-Service Portal Submissions</span>
+        </div>
+
+        {refunds.length === 0 ? (
+          <div className="p-8 text-center text-xs text-slate-400">
+            No pending or processed customer refund requests.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-slate-950 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="p-3.5">Date</th>
+                  <th className="p-3.5">Pass Reference</th>
+                  <th className="p-3.5">Customer ID</th>
+                  <th className="p-3.5">Reason</th>
+                  <th className="p-3.5">Status</th>
+                  <th className="p-3.5 text-right">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80">
+                {refunds.map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="p-3.5 text-slate-400 font-mono text-[11px]">
+                      {new Date(r.created_at).toLocaleDateString()} {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td className="p-3.5 font-mono font-bold text-slate-200">{r.booking_reference}</td>
+                    <td className="p-3.5 font-mono text-slate-400 text-[11px]">{r.customer_id.slice(0, 12)}...</td>
+                    <td className="p-3.5 text-slate-300 max-w-xs truncate">{r.reason}</td>
+                    <td className="p-3.5">
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        r.status === 'completed' ? 'bg-emerald-500/20 text-emerald-300' :
+                        r.status === 'processing' ? 'bg-amber-500/20 text-amber-300' :
+                        r.status === 'rejected' ? 'bg-slate-800 text-slate-400' :
+                        'bg-rose-500/20 text-rose-300'
+                      }`}>
+                        {r.status}
+                      </span>
+                    </td>
+                    <td className="p-3.5 text-right font-mono font-bold text-white">
+                      ₹{r.amount.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Ledger Table */}

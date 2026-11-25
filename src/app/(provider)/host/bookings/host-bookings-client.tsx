@@ -245,7 +245,8 @@ export function HostBookingsClient({ bookings }: { bookings: Booking[] }) {
         </div>
       ) : (
         <div className="bg-surface rounded-card border border-border overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View (hidden on mobile, visible on lg screens) */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead className="bg-surface-muted border-b border-border text-muted-foreground font-semibold uppercase text-[10px] tracking-wider">
                 <tr>
@@ -263,7 +264,6 @@ export function HostBookingsClient({ bookings }: { bookings: Booking[] }) {
                 {filteredBookings.map((b) => {
                   const isConfirmed = b.status === 'confirmed';
                   const isActive = b.status === 'active';
-                  const isCompleted = b.status === 'completed';
 
                   return (
                     <tr key={b.id} className="hover:bg-surface-muted/50 transition-colors">
@@ -395,6 +395,125 @@ export function HostBookingsClient({ bookings }: { bookings: Booking[] }) {
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card Manifest View (touch-first card list for smartphones) */}
+          <div className="lg:hidden divide-y divide-border">
+            {filteredBookings.map((b) => {
+              const isConfirmed = b.status === 'confirmed';
+              const isActive = b.status === 'active';
+
+              return (
+                <div key={b.id} className="p-4 space-y-3 bg-surface">
+                  {/* Card Header: Slot, Status Pill, Payout */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-primary-soft text-primary font-mono font-bold text-xs rounded-control border border-primary/20">
+                        Slot {b.space?.identifier}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                          isConfirmed
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : isActive
+                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        {isConfirmed ? 'Expected' : isActive ? 'Parked' : b.status}
+                      </span>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-xs font-mono font-black text-emerald-700">
+                        ₹{b.provider_payout_amount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Vehicle Plate & Type */}
+                  <div className="flex items-center justify-between bg-surface-muted p-2.5 rounded-control border border-border">
+                    <div>
+                      <div className="font-mono font-black text-primary text-sm tracking-wider">
+                        {b.vehicle?.registration_number || 'CLEARED GATE PLATE'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground capitalize">
+                        {b.vehicle?.vehicle_type?.replace(/_/g, ' ') || 'Motor Vehicle'} • {b.customer_display_name || 'Driver'}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBooking(b)}
+                      className="px-2.5 py-1 text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Pass</span>
+                    </button>
+                  </div>
+
+                  {/* Location & Time Info */}
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div className="text-foreground font-medium line-clamp-1">{b.space?.title}</div>
+                    <div className="flex items-center gap-1 text-[11px] font-mono">
+                      <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <span>
+                        {new Date(b.start_time).toLocaleDateString()} (
+                        {new Date(b.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} -{' '}
+                        {new Date(b.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Touch-Friendly Mobile Action Buttons */}
+                  <div className="pt-2 flex flex-wrap items-center gap-2 border-t border-border/60">
+                    {isConfirmed && (
+                      <button
+                        type="button"
+                        onClick={() => handleCheckIn(b.id)}
+                        disabled={actionLoading}
+                        className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-control shadow-xs flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>Check In Driver (Grant Entry)</span>
+                      </button>
+                    )}
+
+                    {isActive && (
+                      <button
+                        type="button"
+                        onClick={() => handleCheckOut(b.id)}
+                        disabled={actionLoading}
+                        className="flex-1 py-2.5 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-control shadow-xs flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Check Out Driver (Release Bay)</span>
+                      </button>
+                    )}
+
+                    {isActive && (
+                      <button
+                        type="button"
+                        onClick={() => setOverstayBooking(b)}
+                        className="p-2.5 text-amber-600 bg-amber-50 border border-amber-200 rounded-control min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Flag Overstay"
+                      >
+                        <AlertTriangle className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setEmergencyBooking(b)}
+                      className="p-2.5 text-muted-foreground bg-surface-muted border border-border rounded-control min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Send Emergency Message"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

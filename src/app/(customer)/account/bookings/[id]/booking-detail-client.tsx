@@ -182,7 +182,7 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
     : 0;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-6">
       <div>
         <Link
           href="/account/bookings"
@@ -399,7 +399,7 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
       )}
 
       {/* Confirmed Gate Clearance Pass Card */}
-      <div className="bg-surface rounded-card border-2 border-emerald-500/40 p-6 sm:p-8 shadow-card space-y-6">
+      <div className="bg-surface rounded-card border-2 border-emerald-500/40 p-5 sm:p-8 shadow-card space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full inline-flex items-center gap-1">
@@ -412,7 +412,7 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
               {currentBooking.space?.title || 'Parking Space'}
             </h1>
             <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
-              <MapPin className="w-3.5 h-3.5 text-primary" />
+              <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>
                 {currentBooking.space?.property?.address_line1 || 'Designated Premises'},{' '}
                 {currentBooking.space?.property?.area || 'Ahmedabad'}
@@ -420,14 +420,30 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
             </div>
           </div>
 
-          <div className="bg-surface-muted p-4 rounded-control text-center shrink-0 border border-border">
-            <div className="text-[10px] uppercase font-bold text-muted-foreground">Assigned Slot</div>
-            <div className="text-lg font-black text-primary font-mono">
-              {currentBooking.space?.identifier || 'Bay Assigned'}
+          <div className="flex items-center gap-3">
+            <div className="bg-surface-muted p-4 rounded-control text-center shrink-0 border border-border flex-1 sm:flex-initial">
+              <div className="text-[10px] uppercase font-bold text-muted-foreground">Assigned Slot</div>
+              <div className="text-xl font-black text-primary font-mono">
+                {currentBooking.space?.identifier || 'Bay Assigned'}
+              </div>
+              <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                {currentBooking.booking_reference}
+              </div>
             </div>
-            <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
-              {currentBooking.booking_reference}
-            </div>
+
+            {/* Direct Google Maps Navigation Button */}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${currentBooking.space?.property?.latitude && currentBooking.space?.property?.longitude ? `${currentBooking.space.property.latitude},${currentBooking.space.property.longitude}` : `${currentBooking.space?.property?.address_line1 || ''}, ${currentBooking.space?.property?.area || ''}, ${currentBooking.space?.property?.city || 'India'}`}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-control shadow transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 shrink-0 min-h-[44px]"
+              title="Open directions in Google Maps"
+            >
+              <Navigation className="w-4 h-4 fill-white shrink-0" />
+              <span className="font-bold">Directions</span>
+            </a>
           </div>
         </div>
 

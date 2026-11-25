@@ -16,7 +16,9 @@ import {
   Clock,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  Settings,
+  LifeBuoy
 } from 'lucide-react';
 import { logoutAction } from '@/server/actions/auth-actions';
 
@@ -36,9 +38,13 @@ export function HostNavbar({ user }: HostNavbarProps) {
 
   const navLinks = [
     { href: '/host', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/host/spaces', label: 'My Spaces', icon: Building },
-    { href: '/host/bookings', label: 'Driver Manifest', icon: Calendar },
-    { href: '/host/earnings', label: 'Earnings & Payouts', icon: DollarSign },
+    { href: '/host/spaces', label: 'Spaces', icon: Building },
+    { href: '/host/calendar', label: 'Calendar', icon: Calendar },
+    { href: '/host/bookings', label: 'Manifest', icon: Car },
+    { href: '/host/earnings', label: 'Earnings', icon: DollarSign },
+    { href: '/host/reviews', label: 'Reviews', icon: Sparkles },
+    { href: '/host/settings', label: 'Settings', icon: Settings },
+    { href: '/host/support', label: 'Support', icon: LifeBuoy },
   ];
 
   const isVerified = user.verificationStatus === 'approved';
@@ -64,7 +70,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
           </div>
 
           {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+          <nav className="hidden lg:flex items-center space-x-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -72,7 +78,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-control text-xs font-semibold transition-all ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-control text-xs font-semibold transition-all ${
                     isActive
                       ? 'bg-primary-soft text-primary shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground hover:bg-surface-muted'
@@ -90,7 +96,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
             {/* Primary Action Button: List Space */}
             <Link
               href="/host/spaces/new"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-control bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-control bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>List Space</span>
@@ -103,7 +109,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
               title="Search and view the marketplace as a driver"
             >
               <Car className="w-3.5 h-3.5 text-primary" />
-              <span className="hidden lg:inline">Driver Search</span>
+              <span className="hidden xl:inline">Driver Search</span>
             </Link>
 
             {/* Verification Status Badge */}
@@ -114,23 +120,26 @@ export function HostNavbar({ user }: HostNavbarProps) {
                   Verified Host
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                <Link
+                  href="/host/onboarding"
+                  className="inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                >
                   <Clock className="w-3 h-3" />
-                  {user.verificationStatus || 'Pending KYC'}
-                </span>
+                  {user.verificationStatus ? user.verificationStatus.replace(/_/g, ' ') : 'Complete KYC'}
+                </Link>
               )}
             </div>
 
             {/* Host Profile Info */}
-            <div className="flex items-center gap-2 pl-2 border-l border-border">
+            <Link href="/host/settings" className="flex items-center gap-2 pl-2 border-l border-border hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded-full bg-accent-soft text-accent font-bold text-xs flex items-center justify-center border border-accent/20">
                 {user.fullName?.charAt(0) || 'H'}
               </div>
-              <div className="text-left text-xs leading-tight hidden lg:block">
-                <div className="font-bold text-foreground truncate max-w-[120px]">{user.fullName}</div>
-                <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">Verified Host</div>
+              <div className="text-left text-xs leading-tight hidden xl:block">
+                <div className="font-bold text-foreground truncate max-w-[100px]">{user.fullName}</div>
+                <div className="text-[10px] text-muted-foreground truncate max-w-[100px]">Host Operations</div>
               </div>
-            </div>
+            </Link>
 
             {/* Logout Action */}
             <form action={logoutAction} className="inline-flex items-center">
@@ -145,7 +154,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <Link
               href="/host/spaces/new"
               className="p-1.5 rounded-control bg-primary text-white text-xs"
@@ -165,7 +174,7 @@ export function HostNavbar({ user }: HostNavbarProps) {
 
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-white px-4 pt-3 pb-5 space-y-3 shadow-lg">
+        <div className="lg:hidden border-t border-border bg-white px-4 pt-3 pb-5 space-y-3 shadow-lg">
           <div className="flex items-center justify-between pb-2 border-b border-border">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-full bg-accent-soft text-accent font-bold text-sm flex items-center justify-center">
@@ -228,4 +237,3 @@ export function HostNavbar({ user }: HostNavbarProps) {
     </header>
   );
 }
-

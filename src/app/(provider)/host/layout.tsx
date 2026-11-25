@@ -5,6 +5,9 @@ import { Building, PlusCircle, Search, ShieldCheck, Clock } from 'lucide-react';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 import { HostNavbar } from '@/components/layout/host-navbar';
 import { HostFooter } from '@/components/layout/host-footer';
+import { HostBottomNav } from '@/components/layout/host-bottom-nav';
+
+export const dynamic = 'force-dynamic';
 
 export default async function HostLayout({
   children,
@@ -21,7 +24,7 @@ export default async function HostLayout({
   const isVerified = provider?.verification_status === 'approved';
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground pb-20 md:pb-0">
       {/* Dedicated Host Operations Navbar */}
       <HostNavbar
         user={{
@@ -34,16 +37,16 @@ export default async function HostLayout({
       />
 
       {/* Main Content View with Context Subheader */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Sleek Host Portal Context Header */}
-        <div className="bg-surface rounded-card p-4 sm:p-5 border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-surface rounded-card p-3.5 sm:p-5 border border-border shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-accent-soft text-accent font-bold text-base flex items-center justify-center border border-accent/20 shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-accent-soft text-accent font-bold text-sm sm:text-base flex items-center justify-center border border-accent/20 shrink-0">
               <Building className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold text-foreground">
+                <h1 className="text-sm sm:text-lg font-bold text-foreground">
                   {provider?.business_name || session.profile?.full_name || 'Host Operations'}
                 </h1>
                 {isVerified ? (
@@ -58,17 +61,17 @@ export default async function HostLayout({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Pan-India Parking Supply Corridor • Escrow Payouts Active
+              <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
+                Parking Bay Operations & Escrow Management
               </p>
             </div>
           </div>
 
-          {/* Action Buttons with Proper Alignment */}
+          {/* Action Buttons */}
           <div className="flex items-center gap-2 shrink-0">
             <Link
               href="/search"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-control border border-border bg-surface hover:bg-surface-muted text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-control border border-border bg-surface hover:bg-surface-muted text-foreground transition-colors"
             >
               <Search className="w-3.5 h-3.5 text-primary" />
               <span>Driver View</span>
@@ -76,10 +79,10 @@ export default async function HostLayout({
 
             <Link
               href="/host/spaces/new"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-control bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-control bg-primary hover:bg-primary-hover text-white shadow-xs transition-colors"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>+ List New Space</span>
+              <span>+ Add Space</span>
             </Link>
           </div>
         </div>
@@ -88,8 +91,13 @@ export default async function HostLayout({
         <div>{children}</div>
       </main>
 
-      {/* Dedicated Host Operations Footer */}
-      <HostFooter />
+      {/* Dedicated Host Operations Footer on Desktop */}
+      <div className="hidden md:block">
+        <HostFooter />
+      </div>
+
+      {/* Mobile-First Persistent Host Bottom Navigation */}
+      <HostBottomNav />
     </div>
   );
 }
