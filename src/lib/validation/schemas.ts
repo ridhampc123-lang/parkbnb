@@ -59,7 +59,7 @@ export const vehicleSchema = z.object({
 });
 
 export const spaceSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters'),
+  title: z.string().min(3, 'Title is required').default('Covered Reserved Parking Bay'),
   property_title: z.string().min(3, 'Property or Building name is required'),
   property_type: z.enum(['apartment_complex', 'independent_house', 'commercial_lot', 'open_plot']),
   city: z.string().min(2, 'City is required').default('Ahmedabad'),

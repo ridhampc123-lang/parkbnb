@@ -162,3 +162,27 @@ export function verifyOtpHash(phone: string, otp: string, expectedHash: string):
 
   return crypto.timingSafeEqual(actualBuf, expectedBuf);
 }
+
+/**
+ * Cryptographically hashes a user password using scrypt with a unique 16-byte salt
+ */
+export function hashPassword(password: string, customSalt?: string): { hash: string; salt: string } {
+  const salt = customSalt || crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(password.normalize('NFKC'), salt, 64).toString('hex');
+  return { hash, salt };
+}
+
+/**
+ * Constant-time password verification against stored scrypt hash and salt
+ */
+export function verifyPassword(password: string, storedHash: string, salt: string): boolean {
+  try {
+    const computedHash = crypto.scryptSync(password.normalize('NFKC'), salt, 64).toString('hex');
+    const a = Buffer.from(computedHash, 'hex');
+    const b = Buffer.from(storedHash, 'hex');
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}

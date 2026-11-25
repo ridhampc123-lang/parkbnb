@@ -24,6 +24,18 @@ import {
   maskPhoneNumber,
   maskEmail,
 } from '@/lib/privacy/customer-privacy';
+import { hashPassword, verifyPassword } from '@/lib/auth/session-token';
+
+export interface AuthCredential {
+  userId: string;
+  email: string;
+  passwordHash: string;
+  salt: string;
+  role: UserRole;
+  fullName: string;
+  phone?: string | null;
+  createdAt: string;
+}
 
 export interface OtpVerification {
   id: string;
@@ -58,6 +70,7 @@ class MarketplaceStore {
   private auditLogs: AuditLogEntry[] = [];
   private customerDataAccessLogs: CustomerDataAccessLog[] = [];
   private otps: Map<string, OtpVerification[]> = new Map();
+  private credentials: Map<string, AuthCredential> = new Map();
   private settings: PlatformSettings = {
     platformCommissionRate: 0.15,
     gstRate: 0.18,
@@ -106,6 +119,31 @@ class MarketplaceStore {
       updated_at: new Date().toISOString(),
     };
     this.profiles.set(adminId, systemAdmin);
+
+    // Bootstrap Root Admin & Host Credentials for reliable zero-friction login
+    const adminHash = hashPassword('Admin@2026!', 'salt-admin-static-2026');
+    this.credentials.set('admin@parkbnb.in', {
+      userId: adminId,
+      email: 'admin@parkbnb.in',
+      passwordHash: adminHash.hash,
+      salt: adminHash.salt,
+      role: 'super_admin',
+      fullName: 'ParkBnB Administrator',
+      phone: '9876543210',
+      createdAt: new Date().toISOString(),
+    });
+
+    const host1Cred = hashPassword('Host@123456', 'salt-host1-static-2026');
+    this.credentials.set('rajesh.patel@example.com', {
+      userId: 'usr-host-ahmedabad-01',
+      email: 'rajesh.patel@example.com',
+      passwordHash: host1Cred.hash,
+      salt: host1Cred.salt,
+      role: 'provider',
+      fullName: 'Rajesh Patel',
+      phone: '9825012345',
+      createdAt: new Date().toISOString(),
+    });
 
     // 2. Pilot Ahmedabad Parking Supply (Verified & Bookable)
     // Host 1: Rajesh Patel (Residential Individual, Prahlad Nagar)
@@ -731,6 +769,27 @@ class MarketplaceStore {
   // =============================================================
   // PROFILE & USER MANAGEMENT (Drivers / Customers / Admins)
   // =============================================================
+  public saveAuthCredentials(credential: AuthCredential): void {
+    this.credentials.set(credential.email.toLowerCase().trim(), credential);
+  }
+
+  public getAuthCredential(email: string): AuthCredential | undefined {
+    return this.credentials.get(email.toLowerCase().trim());
+  }
+
+  public verifyUserCredentials(email: string, password: string): { verified: boolean; profile?: Profile } {
+    const cred = this.credentials.get(email.toLowerCase().trim());
+    if (!cred) {
+      return { verified: false };
+    }
+    const isMatch = verifyPassword(password, cred.passwordHash, cred.salt);
+    if (!isMatch) {
+      return { verified: false };
+    }
+    const profile = this.profiles.get(cred.userId) || this.getProfileByEmail(email);
+    return { verified: true, profile };
+  }
+
   public getProfileById(id: string): Profile | undefined {
     return this.profiles.get(id);
   }
@@ -1536,16 +1595,29 @@ class MarketplaceStore {
     return { success: true, booking: updated };
   }
 
-  public hostCheckOutBooking(bookingId: string, hostId: string): { success: boolean; error?: string; booking?: Booking } {
+  public hostCheckOutBooking(bookingId: string, hostId: string): { success: boolean; error?: string; booking?: Booking; overstayMinutes?: number; overstayAmount?: number } {
     const b = this.bookings.get(bookingId);
     if (!b) return { success: false, error: 'Booking reservation not found.' };
     if (b.provider_id !== hostId) return { success: false, error: 'Unauthorized to manage clearance for this booking.' };
     if (b.status !== 'active') return { success: false, error: `Only active parked vehicles can be checked out (current status: ${b.status}).` };
 
+    const nowMs = Date.now();
+    const endMs = new Date(b.end_time).getTime();
+    let overstayMinutes = 0;
+    let overstayAmount = 0;
+    if (nowMs > endMs) {
+      overstayMinutes = Math.ceil((nowMs - endMs) / (1000 * 60));
+      const overstayHours = Math.ceil(overstayMinutes / 60);
+      const hourly = b.space?.hourly_rate || 40;
+      overstayAmount = overstayHours * hourly;
+    }
+
     const updated: Booking = {
       ...b,
       status: 'completed',
       check_out_at: new Date().toISOString(),
+      overstay_minutes: overstayMinutes > 0 ? overstayMinutes : null,
+      overstay_amount: overstayAmount > 0 ? overstayAmount : null,
       updated_at: new Date().toISOString(),
     };
     this.bookings.set(bookingId, updated);
@@ -1559,7 +1631,77 @@ class MarketplaceStore {
       details: `Driver departed gate. Slot ${b.space?.identifier} released back to inventory.`,
     });
 
+    return { success: true, booking: updated, overstayMinutes, overstayAmount };
+  }
+
+  public customerCheckInBooking(bookingId: string, customerId: string): { success: boolean; error?: string; booking?: Booking } {
+    const b = this.bookings.get(bookingId);
+    if (!b) return { success: false, error: 'Booking reservation not found.' };
+    if (b.customer_id !== customerId) return { success: false, error: 'Unauthorized to check in this reservation.' };
+    if (b.status !== 'confirmed') return { success: false, error: `Only confirmed reservations can be checked in (current status: ${b.status}).` };
+
+    const updated: Booking = {
+      ...b,
+      status: 'active',
+      check_in_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    this.bookings.set(bookingId, updated);
+
+    this.recordAuditLog({
+      operator_email: 'customer',
+      action: 'DRIVER_SELF_CHECK_IN',
+      category: 'booking',
+      target_id: bookingId,
+      target_name: b.booking_reference,
+      details: `Driver self-checked in at gate for vehicle ${b.vehicle?.registration_number || 'Plate'}. Slot assigned: ${b.space?.identifier}`,
+    });
+
     return { success: true, booking: updated };
+  }
+
+  public customerCheckOutBooking(
+    bookingId: string,
+    customerId: string,
+    overstayParams?: { overstayMinutes: number; overstayCharge: number }
+  ): { success: boolean; error?: string; booking?: Booking; overstayMinutes?: number; overstayAmount?: number } {
+    const b = this.bookings.get(bookingId);
+    if (!b) return { success: false, error: 'Booking reservation not found.' };
+    if (b.customer_id !== customerId) return { success: false, error: 'Unauthorized to check out this reservation.' };
+    if (b.status !== 'active') return { success: false, error: `Only actively parked vehicles can be checked out (current status: ${b.status}).` };
+
+    const nowMs = Date.now();
+    const endMs = new Date(b.end_time).getTime();
+    let overstayMinutes = overstayParams?.overstayMinutes || 0;
+    let overstayAmount = overstayParams?.overstayCharge || 0;
+
+    if (!overstayMinutes && nowMs > endMs) {
+      overstayMinutes = Math.ceil((nowMs - endMs) / (1000 * 60));
+      const overstayHours = Math.ceil(overstayMinutes / 60);
+      const hourly = b.space?.hourly_rate || 40;
+      overstayAmount = overstayHours * hourly;
+    }
+
+    const updated: Booking = {
+      ...b,
+      status: 'completed',
+      check_out_at: new Date().toISOString(),
+      overstay_minutes: overstayMinutes > 0 ? overstayMinutes : null,
+      overstay_amount: overstayAmount > 0 ? overstayAmount : null,
+      updated_at: new Date().toISOString(),
+    };
+    this.bookings.set(bookingId, updated);
+
+    this.recordAuditLog({
+      operator_email: 'customer',
+      action: 'DRIVER_SELF_CHECK_OUT',
+      category: 'booking',
+      target_id: bookingId,
+      target_name: b.booking_reference,
+      details: `Driver confirmed departure. Slot ${b.space?.identifier} released back to inventory.${overstayMinutes > 0 ? ` Overstay: ${overstayMinutes}m (Extra: ₹${overstayAmount})` : ''}`,
+    });
+
+    return { success: true, booking: updated, overstayMinutes, overstayAmount };
   }
 
   public forceCompleteBooking(bookingId: string, reason?: string, operatorEmail = 'admin@parkbnb.in'): Booking | null {

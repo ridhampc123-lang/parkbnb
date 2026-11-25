@@ -177,6 +177,8 @@ export interface Booking {
   cancelled_at?: string | null;
   check_in_at?: string | null;
   check_out_at?: string | null;
+  overstay_minutes?: number | null;
+  overstay_amount?: number | null;
   created_at: string;
   updated_at: string;
   space?: ParkingSpace;

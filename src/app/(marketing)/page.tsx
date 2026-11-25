@@ -91,6 +91,9 @@ export default function HomePage() {
             {/* Quick Metro Hub Chips */}
             <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Explore Metros:</span>
+              <Link href="/search" className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 rounded-control transition-colors font-bold flex items-center gap-1">
+                <span>📍 Near Me (GPS)</span>
+              </Link>
               <Link href="/search?city=Mumbai" className="px-2.5 py-1 bg-surface-muted hover:bg-primary-soft hover:text-primary rounded-control transition-colors font-medium">
                 Mumbai (BKC)
               </Link>

@@ -119,9 +119,14 @@ export function NewSpaceClient({
     formData.set('longitude', longitude.toString());
     formData.set('has_ev_charging', hasEv.toString());
 
-    // Resolve final listing title
-    const finalTitle = isCustomTitle && customTitle.trim() ? customTitle.trim() : selectedTitle;
+    // Resolve final listing title with zero-failure fallbacks
+    const resolvedCustom = isCustomTitle && customTitle.trim().length >= 3 ? customTitle.trim() : null;
+    const finalTitle = resolvedCustom || selectedTitle || (initialTitles.length > 0 ? initialTitles[0] : 'Covered Reserved Parking Bay');
     formData.set('title', finalTitle);
+    formData.set('title_select', selectedTitle || initialTitles[0] || 'Covered Reserved Parking Bay');
+    if (resolvedCustom) {
+      formData.set('title_custom', resolvedCustom);
+    }
 
     // Payout details
     if (editPayout) {
@@ -381,6 +386,7 @@ export function NewSpaceClient({
                     Choose from standard listing title options:
                   </label>
                   <select
+                    name="title_select"
                     value={isCustomTitle ? '__custom__' : selectedTitle}
                     onChange={(e) => handleTitleDropdownChange(e.target.value)}
                     className="w-full px-3 py-2 text-xs bg-surface border border-border rounded-control focus:outline-none focus:border-primary text-foreground font-semibold"
@@ -401,6 +407,7 @@ export function NewSpaceClient({
                     </label>
                     <input
                       type="text"
+                      name="title_custom"
                       value={customTitle}
                       onChange={(e) => setCustomTitle(e.target.value)}
                       required={isCustomTitle}
@@ -410,6 +417,11 @@ export function NewSpaceClient({
                   </div>
                 )}
               </div>
+              <input
+                type="hidden"
+                name="title"
+                value={isCustomTitle && customTitle.trim().length >= 3 ? customTitle.trim() : selectedTitle}
+              />
             </div>
 
             {/* Vehicle Types Permitted */}

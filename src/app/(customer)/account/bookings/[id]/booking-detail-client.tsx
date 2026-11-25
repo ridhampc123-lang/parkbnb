@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -21,8 +21,18 @@ import {
   QrCode,
   IndianRupee,
   Receipt,
+  LogIn,
+  LogOut,
+  Navigation,
+  Check,
+  Sparkles
 } from 'lucide-react';
-import { cancelBookingAction, extendBookingAction } from '@/server/actions/booking-actions';
+import {
+  cancelBookingAction,
+  extendBookingAction,
+  customerCheckInAction,
+  customerCheckOutAction
+} from '@/server/actions/booking-actions';
 import { submitReviewAction } from '@/server/actions/review-actions';
 import { Booking } from '@/types/database';
 
@@ -32,6 +42,20 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
   const [currentBooking, setCurrentBooking] = useState<Booking>(booking);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // In / Out Gate Management state
+  const [checkInLoading, setCheckInLoading] = useState(false);
+  const [checkOutLoading, setCheckOutLoading] = useState(false);
+  const [gateFeedback, setGateFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Live timer for active sessions
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (currentBooking.status === 'active') {
+      const timer = setInterval(() => setNow(Date.now()), 30000);
+      return () => clearInterval(timer);
+    }
+  }, [currentBooking.status]);
 
   // Extension state
   const [extendHours, setExtendHours] = useState(1);
@@ -43,6 +67,49 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewSuccess, setReviewSuccess] = useState(false);
+
+  // Handle Customer Check-In (When In)
+  async function handleCheckIn() {
+    if (!confirm('Confirm arrival at the gate and check in to your assigned parking slot?')) return;
+    setCheckInLoading(true);
+    setGateFeedback(null);
+
+    const result = await customerCheckInAction(currentBooking.id);
+    setCheckInLoading(false);
+
+    if (result.error) {
+      setGateFeedback({ type: 'error', message: result.error });
+    } else if (result.booking) {
+      setCurrentBooking(result.booking);
+      setGateFeedback({
+        type: 'success',
+        message: `Check-in confirmed! Your vehicle is cleared for entry into Slot ${result.booking.space?.identifier || 'B-14'}.`,
+      });
+      router.refresh();
+    }
+  }
+
+  // Handle Customer Check-Out (When Out)
+  async function handleCheckOut() {
+    if (!confirm('Confirm departure from the premises and release your parking slot?')) return;
+    setCheckOutLoading(true);
+    setGateFeedback(null);
+
+    const result = await customerCheckOutAction(currentBooking.id);
+    setCheckOutLoading(false);
+
+    if (result.error) {
+      setGateFeedback({ type: 'error', message: result.error });
+    } else if (result.booking) {
+      setCurrentBooking(result.booking);
+      let msg = 'Vehicle departure logged and parking slot released back to inventory.';
+      if (result.overstayMinutes && result.overstayMinutes > 0) {
+        msg += ` Note: Overstay of ${result.overstayMinutes} minutes recorded (Additional charge: ₹${result.overstayAmount}).`;
+      }
+      setGateFeedback({ type: 'success', message: msg });
+      router.refresh();
+    }
+  }
 
   async function handleCancel() {
     if (
@@ -101,6 +168,19 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
     }
   }
 
+  // Calculate elapsed parked duration for active session
+  let elapsedMinutes = 0;
+  if (currentBooking.status === 'active' && currentBooking.check_in_at) {
+    const startMs = new Date(currentBooking.check_in_at).getTime();
+    elapsedMinutes = Math.max(1, Math.floor((now - startMs) / (1000 * 60)));
+  }
+
+  const isOverstay =
+    currentBooking.status === 'active' && now > new Date(currentBooking.end_time).getTime();
+  const overstayMinutes = isOverstay
+    ? Math.floor((now - new Date(currentBooking.end_time).getTime()) / (1000 * 60))
+    : 0;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -126,7 +206,199 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
         </div>
       )}
 
-      {/* Confirmed Gate Clearance Pass */}
+      {gateFeedback && (
+        <div
+          className={`p-3.5 rounded-control text-xs flex items-center gap-2 border animate-in fade-in duration-200 ${
+            gateFeedback.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-semibold'
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}
+        >
+          {gateFeedback.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-red-700 shrink-0" />
+          )}
+          <span>{gateFeedback.message}</span>
+        </div>
+      )}
+
+      {/* ============================================================= */}
+      {/* SECTION: REAL-TIME "WHEN IN" & "WHEN OUT" GATE MANAGEMENT PASS */}
+      {/* ============================================================= */}
+
+      {/* State 1: Confirmed Arrival Window -> Prompt to Check-In ("When In") */}
+      {currentBooking.status === 'confirmed' && (
+        <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-card p-6 shadow-xl space-y-4 border border-blue-700/50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-500/20 text-cyan-300 border border-blue-400/30">
+                <LogIn className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-300 font-bold block">
+                  Step 1 • Gate Arrival Check-In
+                </span>
+                <h2 className="text-lg font-black text-white mt-0.5">Arrived at the Parking Gate?</h2>
+                <p className="text-xs text-blue-200 mt-1 max-w-lg leading-relaxed">
+                  When you reach <strong className="text-white">{currentBooking.space?.property?.area || 'the premises'}</strong>, click Confirm Gate Entry to notify the security guard and start your authorized parking session in Slot <span className="font-mono font-bold text-cyan-300">{currentBooking.space?.identifier || 'B-14'}</span>.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleCheckIn}
+              disabled={checkInLoading}
+              className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+            >
+              {checkInLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+              ) : (
+                <LogIn className="w-4 h-4" />
+              )}
+              <span>Confirm Gate Entry (Check In)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* State 2: Actively Parked -> Live Timer & Check-Out ("When Out") */}
+      {currentBooking.status === 'active' && (
+        <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 border-2 border-emerald-500 rounded-card p-6 shadow-xl space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-3">
+              <span className="relative flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500"></span>
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-black text-emerald-400 uppercase tracking-wider">
+                    Live Session Active
+                  </span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-mono font-bold">
+                    Slot {currentBooking.space?.identifier}
+                  </span>
+                </div>
+                <h2 className="text-lg font-black text-white mt-0.5">Vehicle Currently Parked</h2>
+              </div>
+            </div>
+
+            {/* Check-Out Action Button */}
+            <button
+              onClick={handleCheckOut}
+              disabled={checkOutLoading}
+              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+            >
+              {checkOutLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+              ) : (
+                <LogOut className="w-4 h-4" />
+              )}
+              <span>Confirm Gate Exit (Check Out)</span>
+            </button>
+          </div>
+
+          {/* Active Session Timers */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Entry Logged</span>
+              <span className="font-bold text-white font-mono">
+                {currentBooking.check_in_at
+                  ? new Date(currentBooking.check_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : 'Just now'}
+              </span>
+            </div>
+
+            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Time Elapsed</span>
+              <span className="font-bold text-emerald-400 font-mono text-sm">
+                {Math.floor(elapsedMinutes / 60)}h {elapsedMinutes % 60}m
+              </span>
+            </div>
+
+            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Booked Until</span>
+              <span className="font-bold text-white font-mono">
+                {new Date(currentBooking.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+
+            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
+              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Vehicle Plate</span>
+              <span className="font-mono font-black text-cyan-300">
+                {currentBooking.vehicle?.registration_number || 'Cleared Plate'}
+              </span>
+            </div>
+          </div>
+
+          {/* Overstay Warning Banner if driver is still parked past end_time */}
+          {isOverstay && (
+            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center justify-between animate-pulse">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>
+                  <strong>Overstay Warning:</strong> You have exceeded booked departure by {overstayMinutes} min. Additional hourly rate applies upon check-out.
+                </span>
+              </div>
+              <button
+                onClick={handleExtend}
+                className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold text-[11px] rounded-lg shrink-0 ml-2"
+              >
+                Extend Booking
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* State 3: Completed Session -> Log Summary */}
+      {currentBooking.status === 'completed' && (
+        <div className="bg-surface rounded-card p-5 border border-border space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider">
+                Gate Entry & Exit Log Record
+              </span>
+            </div>
+            <span className="text-[10px] bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-200">
+              Slot Released & Returned to Inventory
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-surface-muted p-3.5 rounded-control font-mono">
+            <div>
+              <span className="text-[10px] text-muted-foreground block font-sans">Check-In Timestamp</span>
+              <span className="font-bold text-foreground">
+                {currentBooking.check_in_at
+                  ? new Date(currentBooking.check_in_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : 'Recorded'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-muted-foreground block font-sans">Check-Out Timestamp</span>
+              <span className="font-bold text-foreground">
+                {currentBooking.check_out_at
+                  ? new Date(currentBooking.check_out_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : 'Recorded'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-muted-foreground block font-sans">Assigned Bay</span>
+              <span className="font-bold text-primary">{currentBooking.space?.identifier}</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-muted-foreground block font-sans">Overstay Notes</span>
+              <span className="font-bold text-foreground">
+                {currentBooking.overstay_minutes ? `${currentBooking.overstay_minutes}m (₹${currentBooking.overstay_amount})` : 'Zero Overstay (On Time)'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmed Gate Clearance Pass Card */}
       <div className="bg-surface rounded-card border-2 border-emerald-500/40 p-6 sm:p-8 shadow-card space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
           <div>
@@ -217,7 +489,6 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
           </div>
 
           <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-200 shrink-0">
-            {/* Visual SVG QR Code placeholder pattern */}
             <div className="w-24 h-24 bg-slate-950 p-2 rounded flex flex-col justify-between">
               <div className="flex justify-between">
                 <div className="w-5 h-5 bg-white rounded-sm"></div>
@@ -270,7 +541,7 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
               <span className="text-xs text-muted-foreground font-medium">Extend:</span>
               <select
                 value={extendHours}
-                onChange={e => setExtendHours(Number(e.target.value))}
+                onChange={(e) => setExtendHours(Number(e.target.value))}
                 className="px-2.5 py-1.5 bg-surface border border-border rounded-control text-xs text-foreground font-semibold"
               >
                 <option value={1}>+1 Hour</option>
@@ -287,51 +558,71 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
             </div>
 
             {/* Cancel Button */}
-            <button
-              onClick={handleCancel}
-              disabled={cancelling}
-              className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-control text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>{cancelling ? 'Processing Refund...' : 'Cancel Reservation'}</span>
-            </button>
+            {currentBooking.status === 'confirmed' && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-control text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{cancelling ? 'Processing Refund...' : 'Cancel Reservation'}</span>
+              </button>
+            )}
           </div>
         )}
 
         {/* Review Form for Completed Bookings */}
-        {currentBooking.status === 'completed' && !reviewSuccess && (
-          <form onSubmit={handleReviewSubmit} className="bg-surface-muted p-5 rounded-card border border-border space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-              <span>Leave a Verified Review</span>
+        {currentBooking.status === 'completed' && (
+          <div className="border-t border-border pt-6 space-y-4">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              <Star className="w-4 h-4 text-accent fill-accent" />
+              <span>Rate Your Parking Experience</span>
             </h3>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3, 4, 5].map(star => (
+
+            {reviewSuccess ? (
+              <div className="p-4 bg-emerald-50 text-emerald-800 rounded-control text-xs font-semibold flex items-center gap-2 border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Thank you! Your verified parking review has been published.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleReviewSubmit} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Rating:</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`p-1 rounded hover:scale-110 transition-transform ${
+                          star <= rating ? 'text-accent' : 'text-slate-300'
+                        }`}
+                      >
+                        <Star className={`w-5 h-5 ${star <= rating ? 'fill-accent' : ''}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <textarea
+                  rows={2}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share details about gate clearance, lighting, spot accessibility, or security..."
+                  className="w-full p-2.5 text-xs bg-surface-muted border border-border rounded-control focus:outline-none focus:border-primary text-foreground"
+                />
+
                 <button
-                  type="button"
-                  key={star}
-                  onClick={() => setRating(star)}
-                  className={`text-lg ${star <= rating ? 'text-amber-500' : 'text-slate-300'}`}
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow transition-colors flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  ★
+                  {reviewSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Submit Verified Review</span>
                 </button>
-              ))}
-            </div>
-            <textarea
-              rows={2}
-              value={reviewComment}
-              onChange={e => setReviewComment(e.target.value)}
-              placeholder="How was the parking access and security?"
-              className="w-full p-2.5 bg-surface border border-border rounded-control text-xs text-foreground"
-            />
-            <button
-              type="submit"
-              disabled={reviewSubmitting}
-              className="px-4 py-1.5 bg-primary text-white rounded-control text-xs font-bold hover:bg-primary-hover disabled:opacity-50"
-            >
-              {reviewSubmitting ? 'Posting...' : 'Submit Review'}
-            </button>
-          </form>
+              </form>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -312,3 +312,52 @@ export async function extendBookingAction(params: {
 
   return { success: true, booking: updatedBooking };
 }
+
+export async function customerCheckInAction(bookingId: string) {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || !session.user) {
+    return { error: 'Please sign in to check in to your reserved parking spot.' };
+  }
+
+  const store = getLocalStore();
+  const result = store.customerCheckInBooking(bookingId, session.user.id);
+
+  if (!result.success) {
+    return { error: result.error || 'Failed to check in.' };
+  }
+
+  revalidatePath('/account/bookings');
+  revalidatePath(`/account/bookings/${bookingId}`);
+  revalidatePath('/host/bookings');
+  revalidatePath('/admin/bookings');
+  revalidatePath('/search');
+
+  return { success: true, booking: result.booking };
+}
+
+export async function customerCheckOutAction(bookingId: string) {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || !session.user) {
+    return { error: 'Please sign in to check out and release your parking spot.' };
+  }
+
+  const store = getLocalStore();
+  const result = store.customerCheckOutBooking(bookingId, session.user.id);
+
+  if (!result.success) {
+    return { error: result.error || 'Failed to check out.' };
+  }
+
+  revalidatePath('/account/bookings');
+  revalidatePath(`/account/bookings/${bookingId}`);
+  revalidatePath('/host/bookings');
+  revalidatePath('/admin/bookings');
+  revalidatePath('/search');
+
+  return {
+    success: true,
+    booking: result.booking,
+    overstayMinutes: result.overstayMinutes,
+    overstayAmount: result.overstayAmount,
+  };
+}

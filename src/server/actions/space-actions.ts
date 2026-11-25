@@ -15,18 +15,43 @@ export async function createSpaceAction(formData: FormData) {
   const vehicleTypes = formData.getAll('vehicle_types') as VehicleType[];
   const securityFeatures = formData.getAll('security_features') as string[];
 
+  const propertyTitle = (formData.get('property_title') as string)?.trim() || '';
+  const area = (formData.get('area') as string)?.trim() || '';
+  const city = (formData.get('city') as string)?.trim() || 'Ahmedabad';
+  const parkingType = (formData.get('parking_type') as string)?.trim() || 'covered';
+
+  // Robust, foolproof listing title resolution that NEVER fails validation
+  const rawTitle = (
+    (formData.get('title') as string) ||
+    (formData.get('title_custom') as string) ||
+    (formData.get('title_select') as string)
+  )?.trim();
+
+  let resolvedTitle = rawTitle;
+  if (!resolvedTitle || resolvedTitle === '__custom__' || resolvedTitle.length < 3) {
+    if (propertyTitle && area) {
+      resolvedTitle = `${parkingType === 'covered' ? 'Covered Parking' : 'Reserved Parking'} at ${propertyTitle}, ${area}`;
+    } else if (propertyTitle) {
+      resolvedTitle = `${propertyTitle} Reserved Parking Bay`;
+    } else if (area) {
+      resolvedTitle = `Reserved Parking Bay in ${area}, ${city}`;
+    } else {
+      resolvedTitle = 'Covered Reserved Parking Bay';
+    }
+  }
+
   const rawData = {
-    title: ((formData.get('title_custom') as string)?.trim() || (formData.get('title') as string) || (formData.get('title_select') as string))?.trim(),
-    property_title: formData.get('property_title'),
+    title: resolvedTitle,
+    property_title: propertyTitle,
     property_type: formData.get('property_type'),
-    city: (formData.get('city') as string) || 'Ahmedabad',
-    area: formData.get('area'),
+    city,
+    area,
     address_line1: formData.get('address_line1'),
     postal_code: formData.get('postal_code'),
     latitude: Number(formData.get('latitude') || 23.0225),
     longitude: Number(formData.get('longitude') || 72.5714),
     identifier: formData.get('identifier'),
-    parking_type: formData.get('parking_type'),
+    parking_type: parkingType,
     hourly_rate: Number(formData.get('hourly_rate')),
     daily_rate: formData.get('daily_rate') ? Number(formData.get('daily_rate')) : undefined,
     monthly_rate: formData.get('monthly_rate') ? Number(formData.get('monthly_rate')) : undefined,
