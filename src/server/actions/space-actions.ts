@@ -8,6 +8,7 @@ import { repository } from '@/lib/db/supabase-repository';
 import { getLocalStore } from '@/lib/store/marketplace-store';
 import { ParkingSpace, Property, VehicleType, ParkingSpacePhoto } from '@/types/database';
 import { parseGoogleMapsUrl, generateGoogleMapsDirectionUrl } from '@/lib/location/pincode-directory';
+import { generateSpacePublicId, generateOwnerPublicId } from '@/lib/privacy/customer-privacy';
 
 export async function createSpaceAction(formData: FormData) {
   const session = await getServerSession();
@@ -197,8 +198,14 @@ export async function createSpaceAction(formData: FormData) {
   }
 
   // 3. Create Parking Space (Strictly pending review until Admin approves)
+  const existingProvider = store.getProviderProfile(session.user.id);
+  const ownerPublicId = existingProvider?.owner_public_id || generateOwnerPublicId();
+  const spacePublicId = generateSpacePublicId();
+
   const space: ParkingSpace = {
     id: spaceId,
+    space_public_id: spacePublicId,
+    owner_public_id: ownerPublicId,
     property_id: propertyId,
     provider_id: session.user.id,
     identifier: validation.data.identifier,
@@ -224,6 +231,9 @@ export async function createSpaceAction(formData: FormData) {
     photos,
     vehicle_types: validation.data.vehicle_types,
   };
+
+  store.createProperty(property);
+  store.createSpace(space);
 
   await repository.createParkingSpace(space);
 

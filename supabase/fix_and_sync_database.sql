@@ -19,9 +19,14 @@ ALTER TABLE public.profiles ALTER COLUMN email DROP NOT NULL;
 -- 2. Bookings Table: Add missing privacy & operational columns
 ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS booking_customer_reference text;
 ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS customer_display_name text;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS owner_public_id text;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS space_public_id text;
 ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS gate_status text NOT NULL DEFAULT 'booked' CHECK (gate_status IN ('booked', 'checked_in', 'checked_out', 'overstay'));
 
--- 3. Parking Spaces Table: Add vehicle_types column
+-- 3. Parking Spaces & Provider Profiles: Add Universal Forensic Identifiers & Vehicle Types
+ALTER TABLE public.provider_profiles ADD COLUMN IF NOT EXISTS owner_public_id text UNIQUE;
+ALTER TABLE public.parking_spaces ADD COLUMN IF NOT EXISTS space_public_id text UNIQUE;
+ALTER TABLE public.parking_spaces ADD COLUMN IF NOT EXISTS owner_public_id text;
 ALTER TABLE public.parking_spaces ADD COLUMN IF NOT EXISTS vehicle_types text[] DEFAULT '{"car_sedan","car_suv","car_hatchback"}';
 
 -- 4. Financial Ledger Table: Ensure table exists

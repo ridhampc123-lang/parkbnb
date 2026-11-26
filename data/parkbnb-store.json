@@ -1,0 +1,1806 @@
+{
+  "version": 1,
+  "saved_at": "2026-11-26T10:51:27.838Z",
+  "profiles": [
+    [
+      "usr-admin-system-01",
+      {
+        "id": "usr-admin-system-01",
+        "customer_public_id": "PBN-C-ADMIN001",
+        "full_name": "ParkBnB Administrator",
+        "email": "admin@parkbnb.in",
+        "phone": "9876543210",
+        "phone_verified": true,
+        "role": "super_admin",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:38.316Z",
+        "updated_at": "2026-11-26T10:50:38.323Z"
+      }
+    ],
+    [
+      "usr-host-ahmedabad-01",
+      {
+        "id": "usr-host-ahmedabad-01",
+        "customer_public_id": "PBN-C-HST001",
+        "full_name": "Rajesh Patel",
+        "email": "rajesh.patel@example.com",
+        "phone": "9825012345",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-10-27T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z"
+      }
+    ],
+    [
+      "usr-host-ahmedabad-02",
+      {
+        "id": "usr-host-ahmedabad-02",
+        "customer_public_id": "PBN-C-HST002",
+        "full_name": "Vikram Shah",
+        "email": "management@timessquare-ahmedabad.com",
+        "phone": "9879511223",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-11-01T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z"
+      }
+    ],
+    [
+      "usr-host-mumbai-01",
+      {
+        "id": "usr-host-mumbai-01",
+        "customer_public_id": "PBN-C-MUM001",
+        "full_name": "Aditya Singhania",
+        "email": "aditya.singhania@bkc-parking.in",
+        "phone": "9820011223",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-10-17T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z"
+      }
+    ],
+    [
+      "usr-host-delhi-01",
+      {
+        "id": "usr-host-delhi-01",
+        "customer_public_id": "PBN-C-DEL001",
+        "full_name": "Rohit Mehra",
+        "email": "rohit.mehra@cybercity-dlf.in",
+        "phone": "9811099887",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-10-22T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z"
+      }
+    ],
+    [
+      "usr-host-blr-01",
+      {
+        "id": "usr-host-blr-01",
+        "customer_public_id": "PBN-C-BLR001",
+        "full_name": "Suresh Narayanan",
+        "email": "suresh.n@koramangala-parking.com",
+        "phone": "9845012399",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-10-27T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z"
+      }
+    ],
+    [
+      "usr-host-pune-01",
+      {
+        "id": "usr-host-pune-01",
+        "customer_public_id": "PBN-C-PUN001",
+        "full_name": "Nitin Deshmukh",
+        "email": "nitin.d@hinjewadi-parking.in",
+        "phone": "9890123456",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-10-29T10:50:38.736Z",
+        "updated_at": "2026-11-26T10:50:38.736Z"
+      }
+    ],
+    [
+      "usr-host-hyd-01",
+      {
+        "id": "usr-host-hyd-01",
+        "customer_public_id": "PBN-C-HYD001",
+        "full_name": "Venkat Reddy",
+        "email": "venkat.reddy@cyberabad-parking.com",
+        "phone": "9849011224",
+        "phone_verified": true,
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-10-31T10:50:38.736Z",
+        "updated_at": "2026-11-26T10:50:38.736Z"
+      }
+    ],
+    [
+      "cust-test-1795690239176",
+      {
+        "id": "cust-test-1795690239176",
+        "email": "driver.test@parkbnb.in",
+        "phone": "+919876543299",
+        "full_name": "Rahul S. Sharma",
+        "role": "customer",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:39.176Z",
+        "updated_at": "2026-11-26T10:50:39.324Z",
+        "customer_public_id": "PBN-C-7CHR64TS"
+      }
+    ],
+    [
+      "host-test-1795690239176",
+      {
+        "id": "host-test-1795690239176",
+        "email": "owner.test@parkbnb.in",
+        "phone": "+919876599999",
+        "full_name": "Vikram Patel",
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:39.239Z",
+        "updated_at": "2026-11-26T10:50:39.239Z",
+        "customer_public_id": "PBN-C-4LTL3Q2T"
+      }
+    ],
+    [
+      "usr-test-cust-09",
+      {
+        "id": "usr-test-cust-09",
+        "full_name": "Anand Sharma",
+        "email": null,
+        "phone": "9876500009",
+        "phone_verified": true,
+        "phone_verified_at": "2026-11-26T10:50:39.292Z",
+        "role": "customer",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:39.292Z",
+        "updated_at": "2026-11-26T10:50:39.292Z",
+        "customer_public_id": "PBN-C-PQ2DVB4T"
+      }
+    ],
+    [
+      "usr-test-lookup-01",
+      {
+        "id": "usr-test-lookup-01",
+        "customer_public_id": "PBN-C-UGUMA829",
+        "full_name": "Priyanka Trivedi",
+        "email": "priyanka.t@example.com",
+        "phone": "9909911223",
+        "phone_verified": true,
+        "role": "customer",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:40.342Z",
+        "updated_at": "2026-11-26T10:50:40.342Z"
+      }
+    ],
+    [
+      "6283b8de-b8a2-4682-a93b-3ac23d1bf057",
+      {
+        "id": "6283b8de-b8a2-4682-a93b-3ac23d1bf057",
+        "customer_public_id": "PBN-C-GGDVU8GL",
+        "full_name": "Kavita Sharma",
+        "email": "newcustomer_1795690240639@parkbnb.test",
+        "phone": "9876549999",
+        "phone_verified": false,
+        "role": "customer",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:40.820Z",
+        "updated_at": "2026-11-26T10:50:40.820Z"
+      }
+    ],
+    [
+      "40aa3bc8-233c-42b9-b7c3-9cc45f9adfa1",
+      {
+        "id": "40aa3bc8-233c-42b9-b7c3-9cc45f9adfa1",
+        "customer_public_id": "PBN-C-G7UJFSAL",
+        "full_name": "Manish Verma",
+        "email": "host_1795690241006@parkbnb.test",
+        "role": "provider",
+        "status": "active",
+        "created_at": "2026-11-26T10:50:41.163Z",
+        "updated_at": "2026-11-26T10:50:41.163Z"
+      }
+    ]
+  ],
+  "providerProfiles": [
+    [
+      "usr-host-ahmedabad-01",
+      {
+        "id": "usr-host-ahmedabad-01",
+        "owner_public_id": "PBN-O-HST001",
+        "provider_type": "individual_residential",
+        "business_name": "Shivalik Heights Parking Allotment",
+        "verification_status": "approved",
+        "verified_at": "2026-10-29T10:50:38.734Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "Rajesh Patel",
+        "bank_account_number": "123456789012",
+        "bank_ifsc_code": "HDFC0001234",
+        "upi_id": "rajesh.patel@okhdfcbank",
+        "commission_rate": 0.15,
+        "created_at": "2026-10-27T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z"
+      }
+    ],
+    [
+      "usr-host-ahmedabad-02",
+      {
+        "id": "usr-host-ahmedabad-02",
+        "owner_public_id": "PBN-O-HST002",
+        "provider_type": "commercial_operator",
+        "business_name": "Times Square Commercial Precinct LLP",
+        "pan_number": "AABCT1234E",
+        "gstin": "24AABCT1234E1Z5",
+        "verification_status": "approved",
+        "verified_at": "2026-11-06T10:50:38.734Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "Times Square Commercial Precinct LLP",
+        "bank_account_number": "987654321098",
+        "bank_ifsc_code": "ICIC0000102",
+        "upi_id": "timessquare@icici",
+        "commission_rate": 0.12,
+        "created_at": "2026-11-01T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z"
+      }
+    ],
+    [
+      "usr-host-mumbai-01",
+      {
+        "id": "usr-host-mumbai-01",
+        "owner_public_id": "PBN-O-MUM001",
+        "provider_type": "commercial_operator",
+        "business_name": "BKC Financial Center Parking Towers",
+        "pan_number": "AAACS9876K",
+        "gstin": "27AAACS9876K1Z9",
+        "verification_status": "approved",
+        "verified_at": "2026-10-22T10:50:38.735Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "BKC Financial Center Parking Towers",
+        "bank_account_number": "50200012345678",
+        "bank_ifsc_code": "HDFC0000060",
+        "upi_id": "bkc.parking@hdfcbank",
+        "commission_rate": 0.12,
+        "created_at": "2026-10-17T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z"
+      }
+    ],
+    [
+      "usr-host-delhi-01",
+      {
+        "id": "usr-host-delhi-01",
+        "owner_public_id": "PBN-O-DEL001",
+        "provider_type": "commercial_operator",
+        "business_name": "Cyber City Mobility Services",
+        "pan_number": "AABCM6543R",
+        "gstin": "07AABCM6543R1Z2",
+        "verification_status": "approved",
+        "verified_at": "2026-10-27T10:50:38.735Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "Cyber City Mobility Services",
+        "bank_account_number": "002105001234",
+        "bank_ifsc_code": "ICIC0000021",
+        "upi_id": "cybercity.parking@icici",
+        "commission_rate": 0.15,
+        "created_at": "2026-10-22T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z"
+      }
+    ],
+    [
+      "usr-host-blr-01",
+      {
+        "id": "usr-host-blr-01",
+        "owner_public_id": "PBN-O-BLR001",
+        "provider_type": "individual_residential",
+        "business_name": "Koramangala Gated Stilt Parking",
+        "verification_status": "approved",
+        "verified_at": "2026-11-01T10:50:38.735Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "Suresh Narayanan",
+        "bank_account_number": "600123456789",
+        "bank_ifsc_code": "SBIN0001234",
+        "upi_id": "suresh.n@oksbi",
+        "commission_rate": 0.15,
+        "created_at": "2026-10-27T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z"
+      }
+    ],
+    [
+      "usr-host-pune-01",
+      {
+        "id": "usr-host-pune-01",
+        "owner_public_id": "PBN-O-PUN001",
+        "provider_type": "commercial_operator",
+        "business_name": "Hinjewadi Tech Corridor Parking",
+        "verification_status": "approved",
+        "verified_at": "2026-11-06T10:50:38.736Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "Nitin Deshmukh",
+        "bank_account_number": "112233445566",
+        "bank_ifsc_code": "BARB0HINJEW",
+        "upi_id": "nitin.d@barodampay",
+        "commission_rate": 0.15,
+        "created_at": "2026-10-29T10:50:38.736Z",
+        "updated_at": "2026-11-26T10:50:38.736Z"
+      }
+    ],
+    [
+      "usr-host-hyd-01",
+      {
+        "id": "usr-host-hyd-01",
+        "owner_public_id": "PBN-O-HYD001",
+        "provider_type": "commercial_operator",
+        "business_name": "HITEC City Smart Park Services",
+        "verification_status": "approved",
+        "verified_at": "2026-11-04T10:50:38.736Z",
+        "verified_by": "usr-admin-system-01",
+        "bank_account_holder": "HITEC City Smart Park Services",
+        "bank_account_number": "998877665544",
+        "bank_ifsc_code": "ANDB0000123",
+        "upi_id": "hitecpark@unionbank",
+        "commission_rate": 0.14,
+        "created_at": "2026-10-31T10:50:38.736Z",
+        "updated_at": "2026-11-26T10:50:38.736Z"
+      }
+    ],
+    [
+      "usr-provider-concurrency-test",
+      {
+        "id": "usr-provider-concurrency-test",
+        "provider_type": "commercial_operator",
+        "business_name": "Ahmedabad Concurrency Test Lot",
+        "verification_status": "approved",
+        "created_at": "2026-11-26T10:50:39.220Z",
+        "updated_at": "2026-11-26T10:50:39.220Z",
+        "owner_public_id": "PBN-O-HA62YEK8"
+      }
+    ],
+    [
+      "host-test-1795690239176",
+      {
+        "id": "host-test-1795690239176",
+        "business_name": "Patel Commercial Parking Services",
+        "business_type": "individual",
+        "verification_status": "approved",
+        "commission_rate": 0.15,
+        "payout_method": "bank_account",
+        "bank_account_number": "987654321098",
+        "bank_ifsc": "HDFC0001234",
+        "account_holder_name": "Vikram Patel",
+        "created_at": "2026-11-26T10:50:39.253Z",
+        "updated_at": "2026-11-26T10:50:39.253Z",
+        "owner_public_id": "PBN-O-F8VNJCUX"
+      }
+    ],
+    [
+      "host-test-umrtk",
+      {
+        "id": "host-test-umrtk",
+        "provider_type": "individual_residential",
+        "verification_status": "draft",
+        "bank_name": "State Bank of India",
+        "bank_account_number": "20345678901",
+        "bank_account_holder": "Amit Shah",
+        "bank_ifsc_code": "SBIN0001234",
+        "upi_id": "amit.new@okhdfcbank",
+        "payout_preference": "upi",
+        "created_at": "2026-11-26T10:50:39.393Z",
+        "updated_at": "2026-11-26T10:50:39.418Z",
+        "owner_public_id": "PBN-O-AYGATVZL"
+      }
+    ],
+    [
+      "host-payout-szg2m",
+      {
+        "id": "host-payout-szg2m",
+        "provider_type": "individual_residential",
+        "verification_status": "approved",
+        "bank_name": "Kotak Mahindra Bank",
+        "bank_account_holder": "Priya Desai",
+        "bank_account_number": "987654321098",
+        "bank_ifsc_code": "KKBK0000811",
+        "upi_id": "priya@kotak",
+        "payout_preference": "upi",
+        "created_at": "2026-11-26T10:50:39.431Z",
+        "updated_at": "2026-11-26T10:50:39.431Z",
+        "owner_public_id": "PBN-O-6DJ6PYMZ"
+      }
+    ]
+  ],
+  "properties": [
+    [
+      "prop-prahladnagar-01",
+      {
+        "id": "prop-prahladnagar-01",
+        "provider_id": "usr-host-ahmedabad-01",
+        "title": "Shivalik Business Hub & Residences",
+        "property_type": "apartment_complex",
+        "address_line1": "B-Wing, Opp. Prahlad Nagar Garden",
+        "address_line2": "Prahlad Nagar Road",
+        "landmark": "Near Prahlad Nagar Garden Gate 2",
+        "area": "Prahlad Nagar",
+        "city": "Ahmedabad",
+        "postal_code": "380015",
+        "latitude": 23.0124,
+        "longitude": 72.5085,
+        "created_at": "2026-10-27T10:50:38.734Z"
+      }
+    ],
+    [
+      "prop-sbr-02",
+      {
+        "id": "prop-sbr-02",
+        "provider_id": "usr-host-ahmedabad-02",
+        "title": "Times Square Commercial Precinct",
+        "property_type": "commercial_lot",
+        "address_line1": "Near Sindhu Bhavan Marg",
+        "landmark": "Next to Taj Skyline",
+        "area": "Sindhu Bhavan Road / Bodakdev",
+        "city": "Ahmedabad",
+        "postal_code": "380054",
+        "latitude": 23.045,
+        "longitude": 72.508,
+        "created_at": "2026-11-01T10:50:38.734Z"
+      }
+    ],
+    [
+      "prop-mumbai-bkc-01",
+      {
+        "id": "prop-mumbai-bkc-01",
+        "provider_id": "usr-host-mumbai-01",
+        "title": "One BKC Commercial Tower",
+        "property_type": "commercial_lot",
+        "address_line1": "G Block, Bandra Kurla Complex",
+        "landmark": "Near MCA Club & US Consulate",
+        "area": "Bandra Kurla Complex (BKC)",
+        "city": "Mumbai",
+        "postal_code": "400051",
+        "latitude": 19.0657,
+        "longitude": 72.8687,
+        "created_at": "2026-10-17T10:50:38.735Z"
+      }
+    ],
+    [
+      "prop-delhi-cybercity-01",
+      {
+        "id": "prop-delhi-cybercity-01",
+        "provider_id": "usr-host-delhi-01",
+        "title": "DLF Cyber City Tower 10",
+        "property_type": "commercial_lot",
+        "address_line1": "DLF Phase 2, Cyber Hub Corridor",
+        "landmark": "Next to Cyber Hub Metro Station",
+        "area": "Gurgaon Cyber City (DLF Phase 2/3)",
+        "city": "Delhi NCR",
+        "postal_code": "122002",
+        "latitude": 28.495,
+        "longitude": 77.0895,
+        "created_at": "2026-10-22T10:50:38.735Z"
+      }
+    ],
+    [
+      "prop-blr-kora-01",
+      {
+        "id": "prop-blr-kora-01",
+        "provider_id": "usr-host-blr-01",
+        "title": "Green Glen Residences",
+        "property_type": "apartment_complex",
+        "address_line1": "17th Main Road, 4th Block",
+        "landmark": "Near Sony World Signal & Bethany High School",
+        "area": "Koramangala",
+        "city": "Bengaluru",
+        "postal_code": "560034",
+        "latitude": 12.9352,
+        "longitude": 77.6245,
+        "created_at": "2026-10-27T10:50:38.735Z"
+      }
+    ],
+    [
+      "prop-pune-hinj-01",
+      {
+        "id": "prop-pune-hinj-01",
+        "provider_id": "usr-host-pune-01",
+        "title": "Infotech Park Plaza",
+        "property_type": "commercial_lot",
+        "address_line1": "Phase 1, Hinjewadi Rajiv Gandhi Infotech Park",
+        "landmark": "Near Wipro Circle & Blue Ridge",
+        "area": "Hinjewadi IT Park",
+        "city": "Pune",
+        "postal_code": "411057",
+        "latitude": 18.5913,
+        "longitude": 73.7389,
+        "created_at": "2026-10-29T10:50:38.736Z"
+      }
+    ],
+    [
+      "prop-hyd-hitec-01",
+      {
+        "id": "prop-hyd-hitec-01",
+        "provider_id": "usr-host-hyd-01",
+        "title": "Mindspace Cyber Towers Arcade",
+        "property_type": "commercial_lot",
+        "address_line1": "Madhapur Road, HITEC City",
+        "landmark": "Opposite Cyber Towers Main Gate",
+        "area": "HITEC City / Cyberabad",
+        "city": "Hyderabad",
+        "postal_code": "500081",
+        "latitude": 17.4435,
+        "longitude": 78.3772,
+        "created_at": "2026-10-31T10:50:38.736Z"
+      }
+    ],
+    [
+      "prop-concurrency-test",
+      {
+        "id": "prop-concurrency-test",
+        "provider_id": "usr-provider-concurrency-test",
+        "title": "Bodakdev Test Tower",
+        "property_type": "commercial_lot",
+        "address_line1": "SBR Road",
+        "area": "Sindhu Bhavan Road / Bodakdev",
+        "city": "Ahmedabad",
+        "postal_code": "380054",
+        "latitude": 23.045,
+        "longitude": 72.508,
+        "created_at": "2026-11-26T10:50:39.234Z"
+      }
+    ],
+    [
+      "prop-test-photo-1795690249039",
+      {
+        "id": "prop-test-photo-1795690249039",
+        "provider_id": "hst-test-photo-1795690249039",
+        "title": "Shivalik Complex",
+        "property_type": "commercial_lot",
+        "address_line1": "Sindhu Bhavan Road",
+        "landmark": "Opposite Taj Skyline",
+        "area": "Bodakdev",
+        "city": "Ahmedabad",
+        "postal_code": "380054",
+        "latitude": 23.0456,
+        "longitude": 72.5123,
+        "google_maps_link": "https://maps.app.goo.gl/tajSkylinePin",
+        "created_at": "2026-11-26T10:50:49.039Z"
+      }
+    ]
+  ],
+  "spaces": [
+    [
+      "spc-prahladnagar-01",
+      {
+        "id": "spc-prahladnagar-01",
+        "space_public_id": "PBN-S-AHM001",
+        "owner_public_id": "PBN-O-HST001",
+        "property_id": "prop-prahladnagar-01",
+        "provider_id": "usr-host-ahmedabad-01",
+        "identifier": "Basement Slot B-22",
+        "title": "Covered Secure Parking near Prahlad Nagar Garden",
+        "description": "CCTV monitored, dedicated underground spot with 24/7 security guard. Easy access ramp off main road.",
+        "parking_type": "covered",
+        "hourly_rate": 40,
+        "daily_rate": 300,
+        "monthly_rate": 4500,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Drive into Gate 2, inform security attendant slot B-22. Display your ParkBnB booking reference.",
+        "security_features": [
+          "cctv",
+          "gated_security",
+          "covered_shade",
+          "lighting",
+          "wide_slot"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 2.4,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-10-27T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z",
+        "property": {
+          "id": "prop-prahladnagar-01",
+          "provider_id": "usr-host-ahmedabad-01",
+          "title": "Shivalik Business Hub & Residences",
+          "property_type": "apartment_complex",
+          "address_line1": "B-Wing, Opp. Prahlad Nagar Garden",
+          "address_line2": "Prahlad Nagar Road",
+          "landmark": "Near Prahlad Nagar Garden Gate 2",
+          "area": "Prahlad Nagar",
+          "city": "Ahmedabad",
+          "postal_code": "380015",
+          "latitude": 23.0124,
+          "longitude": 72.5085,
+          "created_at": "2026-10-27T10:50:38.734Z"
+        },
+        "photos": [
+          {
+            "id": "p1",
+            "space_id": "spc-prahladnagar-01",
+            "storage_path": "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.734Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "ev_four_wheeler"
+        ]
+      }
+    ],
+    [
+      "spc-sbr-02",
+      {
+        "id": "spc-sbr-02",
+        "space_public_id": "PBN-S-AHM002",
+        "owner_public_id": "PBN-O-HST002",
+        "property_id": "prop-sbr-02",
+        "provider_id": "usr-host-ahmedabad-02",
+        "identifier": "Surface Bay EV-04",
+        "title": "Prime Surface Parking with EV Charging on Sindhu Bhavan",
+        "description": "Wide, well-lit parking bay ideal for premium SUVs, sedans, and two-wheelers. Level 2 AC EV charging point installed.",
+        "parking_type": "open",
+        "hourly_rate": 50,
+        "daily_rate": 380,
+        "monthly_rate": 5500,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Enter commercial gate, tell barrier attendant ParkBnB Booking EV-04. Charger activation code is 4492.",
+        "security_features": [
+          "cctv",
+          "ev_charger",
+          "gated_security",
+          "24x7_access"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 3.5,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-01T10:50:38.734Z",
+        "updated_at": "2026-11-26T10:50:38.734Z",
+        "property": {
+          "id": "prop-sbr-02",
+          "provider_id": "usr-host-ahmedabad-02",
+          "title": "Times Square Commercial Precinct",
+          "property_type": "commercial_lot",
+          "address_line1": "Near Sindhu Bhavan Marg",
+          "landmark": "Next to Taj Skyline",
+          "area": "Sindhu Bhavan Road / Bodakdev",
+          "city": "Ahmedabad",
+          "postal_code": "380054",
+          "latitude": 23.045,
+          "longitude": 72.508,
+          "created_at": "2026-11-01T10:50:38.734Z"
+        },
+        "photos": [
+          {
+            "id": "p2",
+            "space_id": "spc-sbr-02",
+            "storage_path": "https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.734Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "two_wheeler",
+          "ev_four_wheeler",
+          "ev_two_wheeler"
+        ]
+      }
+    ],
+    [
+      "spc-mumbai-bkc-01",
+      {
+        "id": "spc-mumbai-bkc-01",
+        "space_public_id": "PBN-S-MUM001",
+        "owner_public_id": "PBN-O-MUM001",
+        "property_id": "prop-mumbai-bkc-01",
+        "provider_id": "usr-host-mumbai-01",
+        "identifier": "Podium Bay P2-18",
+        "title": "Covered Executive Parking at BKC Financial Center",
+        "description": "Boom barrier ANPR access, 24/7 CISF grade security, EV fast charging. Premium multi-level podium spot in Mumbai BKC.",
+        "parking_type": "covered",
+        "hourly_rate": 80,
+        "daily_rate": 650,
+        "monthly_rate": 9500,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Scan entry QR or display ParkBnB Booking ID to gate attendant. Automatic ANPR barrier clears verified plates.",
+        "security_features": [
+          "cctv",
+          "gated_security",
+          "ev_charger",
+          "covered_shade",
+          "boom_barrier",
+          "valet"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 2.8,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-10-17T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z",
+        "property": {
+          "id": "prop-mumbai-bkc-01",
+          "provider_id": "usr-host-mumbai-01",
+          "title": "One BKC Commercial Tower",
+          "property_type": "commercial_lot",
+          "address_line1": "G Block, Bandra Kurla Complex",
+          "landmark": "Near MCA Club & US Consulate",
+          "area": "Bandra Kurla Complex (BKC)",
+          "city": "Mumbai",
+          "postal_code": "400051",
+          "latitude": 19.0657,
+          "longitude": 72.8687,
+          "created_at": "2026-10-17T10:50:38.735Z"
+        },
+        "photos": [
+          {
+            "id": "p3",
+            "space_id": "spc-mumbai-bkc-01",
+            "storage_path": "https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.735Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "two_wheeler",
+          "ev_four_wheeler",
+          "ev_two_wheeler"
+        ]
+      }
+    ],
+    [
+      "spc-delhi-cybercity-01",
+      {
+        "id": "spc-delhi-cybercity-01",
+        "space_public_id": "PBN-S-DEL001",
+        "owner_public_id": "PBN-O-DEL001",
+        "property_id": "prop-delhi-cybercity-01",
+        "provider_id": "usr-host-delhi-01",
+        "identifier": "Basement 1, Spot 42",
+        "title": "Premium Corporate Spot at DLF Cyber City Tower",
+        "description": "Underground climate-controlled parking with direct high-speed elevator access to corporate offices and Cyber Hub food court.",
+        "parking_type": "basement",
+        "hourly_rate": 70,
+        "daily_rate": 550,
+        "monthly_rate": 8000,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Drive into Basement Gate 3, show booking QR code to security. Slot #42 is immediately beside Tower 10 lobby.",
+        "security_features": [
+          "cctv",
+          "gated_security",
+          "covered_shade",
+          "ev_charger",
+          "elevator_access"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 2.5,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-10-22T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.735Z",
+        "property": {
+          "id": "prop-delhi-cybercity-01",
+          "provider_id": "usr-host-delhi-01",
+          "title": "DLF Cyber City Tower 10",
+          "property_type": "commercial_lot",
+          "address_line1": "DLF Phase 2, Cyber Hub Corridor",
+          "landmark": "Next to Cyber Hub Metro Station",
+          "area": "Gurgaon Cyber City (DLF Phase 2/3)",
+          "city": "Delhi NCR",
+          "postal_code": "122002",
+          "latitude": 28.495,
+          "longitude": 77.0895,
+          "created_at": "2026-10-22T10:50:38.735Z"
+        },
+        "photos": [
+          {
+            "id": "p4",
+            "space_id": "spc-delhi-cybercity-01",
+            "storage_path": "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.735Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "two_wheeler",
+          "ev_four_wheeler",
+          "ev_two_wheeler"
+        ]
+      }
+    ],
+    [
+      "spc-blr-kora-01",
+      {
+        "id": "spc-blr-kora-01",
+        "space_public_id": "PBN-S-BLR001",
+        "owner_public_id": "PBN-O-BLR001",
+        "property_id": "prop-blr-kora-01",
+        "provider_id": "usr-host-blr-01",
+        "identifier": "Stilt Slot S-08",
+        "title": "Gated Stilt Parking in Koramangala 4th Block",
+        "description": "Covered stilt parking in premium residential society. 24-hour guard on duty, CCTV monitoring, walking distance to cafes and startups.",
+        "parking_type": "covered",
+        "hourly_rate": 50,
+        "daily_rate": 400,
+        "monthly_rate": 5800,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Show guard booking reference code at society main gate. Park in assigned stilt slot S-08.",
+        "security_features": [
+          "cctv",
+          "gated_security",
+          "covered_shade",
+          "lighting"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 2.6,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-10-27T10:50:38.735Z",
+        "updated_at": "2026-11-26T10:50:38.736Z",
+        "property": {
+          "id": "prop-blr-kora-01",
+          "provider_id": "usr-host-blr-01",
+          "title": "Green Glen Residences",
+          "property_type": "apartment_complex",
+          "address_line1": "17th Main Road, 4th Block",
+          "landmark": "Near Sony World Signal & Bethany High School",
+          "area": "Koramangala",
+          "city": "Bengaluru",
+          "postal_code": "560034",
+          "latitude": 12.9352,
+          "longitude": 77.6245,
+          "created_at": "2026-10-27T10:50:38.735Z"
+        },
+        "photos": [
+          {
+            "id": "p5",
+            "space_id": "spc-blr-kora-01",
+            "storage_path": "https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.736Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "two_wheeler",
+          "ev_four_wheeler",
+          "ev_two_wheeler"
+        ]
+      }
+    ],
+    [
+      "spc-pune-hinj-01",
+      {
+        "id": "spc-pune-hinj-01",
+        "space_public_id": "PBN-S-PUN001",
+        "owner_public_id": "PBN-O-PUN001",
+        "property_id": "prop-pune-hinj-01",
+        "provider_id": "usr-host-pune-01",
+        "identifier": "Bay IT-14",
+        "title": "Covered IT Park Parking at Hinjewadi Phase 1",
+        "description": "Dedicated parking bay with shade net, CCTV surveillance, and 24/7 access. Ideal for daily IT professionals.",
+        "parking_type": "covered",
+        "hourly_rate": 40,
+        "daily_rate": 320,
+        "monthly_rate": 4500,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Enter via Gate 1 on Wipro Road. Attendant will verify license plate against ParkBnB manifest.",
+        "security_features": [
+          "cctv",
+          "gated_security",
+          "covered_shade",
+          "24x7_access"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 2.7,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-10-29T10:50:38.736Z",
+        "updated_at": "2026-11-26T10:50:38.736Z",
+        "property": {
+          "id": "prop-pune-hinj-01",
+          "provider_id": "usr-host-pune-01",
+          "title": "Infotech Park Plaza",
+          "property_type": "commercial_lot",
+          "address_line1": "Phase 1, Hinjewadi Rajiv Gandhi Infotech Park",
+          "landmark": "Near Wipro Circle & Blue Ridge",
+          "area": "Hinjewadi IT Park",
+          "city": "Pune",
+          "postal_code": "411057",
+          "latitude": 18.5913,
+          "longitude": 73.7389,
+          "created_at": "2026-10-29T10:50:38.736Z"
+        },
+        "photos": [
+          {
+            "id": "p6",
+            "space_id": "spc-pune-hinj-01",
+            "storage_path": "https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.736Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "two_wheeler",
+          "ev_four_wheeler",
+          "ev_two_wheeler"
+        ]
+      }
+    ],
+    [
+      "spc-hyd-hitec-01",
+      {
+        "id": "spc-hyd-hitec-01",
+        "space_public_id": "PBN-S-HYD001",
+        "owner_public_id": "PBN-O-HYD001",
+        "property_id": "prop-hyd-hitec-01",
+        "provider_id": "usr-host-hyd-01",
+        "identifier": "Multi-Level P3-11",
+        "title": "Mindspace Corporate Bay at HITEC City Phase 2",
+        "description": "Multi-level covered parking bay with automated license plate recognition and CCS2 fast DC charger on site.",
+        "parking_type": "multi_level",
+        "hourly_rate": 55,
+        "daily_rate": 450,
+        "monthly_rate": 6500,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "access_instructions": "Drive up to Podium Level 3. Boom barrier automatically raises when license plate matches booking.",
+        "security_features": [
+          "cctv",
+          "gated_security",
+          "ev_charger",
+          "covered_shade",
+          "boom_barrier"
+        ],
+        "has_ev_charging": true,
+        "height_limit_meters": 2.8,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-10-31T10:50:38.736Z",
+        "updated_at": "2026-11-26T10:50:38.736Z",
+        "property": {
+          "id": "prop-hyd-hitec-01",
+          "provider_id": "usr-host-hyd-01",
+          "title": "Mindspace Cyber Towers Arcade",
+          "property_type": "commercial_lot",
+          "address_line1": "Madhapur Road, HITEC City",
+          "landmark": "Opposite Cyber Towers Main Gate",
+          "area": "HITEC City / Cyberabad",
+          "city": "Hyderabad",
+          "postal_code": "500081",
+          "latitude": 17.4435,
+          "longitude": 78.3772,
+          "created_at": "2026-10-31T10:50:38.736Z"
+        },
+        "photos": [
+          {
+            "id": "p7",
+            "space_id": "spc-hyd-hitec-01",
+            "storage_path": "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:38.736Z"
+          }
+        ],
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv",
+          "car_hatchback",
+          "two_wheeler",
+          "ev_four_wheeler",
+          "ev_two_wheeler"
+        ]
+      }
+    ],
+    [
+      "sp-test-1795690239176",
+      {
+        "id": "sp-test-1795690239176",
+        "provider_id": "host-test-1795690239176",
+        "title": "Navrangpura Premium Basement Bay 1",
+        "description": "Secured basement parking with 24/7 CCTV and automated gate access.",
+        "property_type": "commercial",
+        "space_type": "covered",
+        "vehicle_types": [
+          "car",
+          "suv",
+          "ev"
+        ],
+        "identifier": "B1-04",
+        "access_type": "digital_gate",
+        "hourly_rate": 45,
+        "daily_rate": 350,
+        "monthly_rate": 4500,
+        "is_active": true,
+        "status": "approved",
+        "amenities": [
+          "cctv",
+          "ev_charging",
+          "covered",
+          "security_guard"
+        ],
+        "created_at": "2026-11-26T10:50:39.263Z",
+        "updated_at": "2026-11-26T10:50:39.482Z",
+        "space_public_id": "PBN-S-QKU4A9GX",
+        "owner_public_id": "PBN-O-F8VNJCUX",
+        "access_instructions": "Show QR code to Security Guard at Entrance Gate 2."
+      }
+    ],
+    [
+      "spc-concurrency-test-01",
+      {
+        "id": "spc-concurrency-test-01",
+        "property_id": "prop-concurrency-test",
+        "provider_id": "usr-provider-concurrency-test",
+        "identifier": "Slot C-101",
+        "title": "Prime Bodakdev Space",
+        "parking_type": "covered",
+        "hourly_rate": 50,
+        "daily_rate": 400,
+        "min_duration_hours": 1,
+        "max_duration_hours": 720,
+        "security_features": [
+          "cctv"
+        ],
+        "has_ev_charging": true,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:39.251Z",
+        "updated_at": "2026-11-26T10:50:39.251Z",
+        "space_public_id": "PBN-S-Q6RTCJN6",
+        "owner_public_id": "PBN-O-HA62YEK8"
+      }
+    ],
+    [
+      "spc-test-2igsf",
+      {
+        "id": "spc-test-2igsf",
+        "property_id": "prop-1",
+        "provider_id": "host-payout-szg2m",
+        "identifier": "Slot 101",
+        "title": "Covered Basement Parking Bay",
+        "parking_type": "covered",
+        "hourly_rate": 50,
+        "min_duration_hours": 1,
+        "max_duration_hours": 24,
+        "security_features": [
+          "cctv"
+        ],
+        "has_ev_charging": false,
+        "status": "submitted",
+        "is_active": false,
+        "created_at": "2026-11-26T10:50:39.444Z",
+        "updated_at": "2026-11-26T10:50:39.444Z",
+        "space_public_id": "PBN-S-MPXK9DED",
+        "owner_public_id": "PBN-O-6DJ6PYMZ"
+      }
+    ],
+    [
+      "spc-test-flow-1795690239677",
+      {
+        "id": "spc-test-flow-1795690239677",
+        "title": "Bodakdev Premier Valet Parking",
+        "slug": "bodakdev-premier-valet-1795690239677",
+        "description": "Secure, covered valet parking in Bodakdev, Ahmedabad.",
+        "address_line1": "SG Highway, Bodakdev",
+        "city": "Ahmedabad",
+        "state": "Gujarat",
+        "postal_code": "380054",
+        "latitude": 23.0338,
+        "longitude": 72.505,
+        "hourly_rate": 60,
+        "daily_rate": 350,
+        "monthly_rate": 4500,
+        "total_spots": 10,
+        "available_spots": 10,
+        "vehicle_types": [
+          "car",
+          "suv"
+        ],
+        "access_type": "valet",
+        "amenities": [
+          "cctv",
+          "covered",
+          "security_guard"
+        ],
+        "status": "approved",
+        "is_active": true,
+        "rating_average": 0,
+        "rating_count": 0,
+        "created_at": "2026-11-26T10:50:39.677Z",
+        "updated_at": "2026-11-26T10:50:39.685Z",
+        "space_public_id": "PBN-S-QU88Q5KQ"
+      }
+    ],
+    [
+      "spc-overlap-test-nbech",
+      {
+        "id": "spc-overlap-test-nbech",
+        "space_public_id": "PBN-S-OVL391",
+        "owner_public_id": "PBN-O-OVL001",
+        "property_id": "prop-overlap-01",
+        "provider_id": "usr-host-overlap-01",
+        "identifier": "Bay Overlap-99",
+        "title": "Test Overlap Spot Bodakdev",
+        "description": "Unit testing bay for overlap verification",
+        "parking_type": "covered",
+        "hourly_rate": 50,
+        "daily_rate": 400,
+        "min_duration_hours": 1,
+        "max_duration_hours": 24,
+        "access_instructions": "Gate 1",
+        "security_features": [
+          "cctv",
+          "gated_security"
+        ],
+        "has_ev_charging": true,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:40.325Z",
+        "updated_at": "2026-11-26T10:50:40.325Z",
+        "vehicle_types": [
+          "car_sedan",
+          "car_suv"
+        ]
+      }
+    ],
+    [
+      "spc-test-dynamic-inherit-01",
+      {
+        "id": "spc-test-dynamic-inherit-01",
+        "property_id": "prop-prahladnagar-01",
+        "provider_id": "usr-host-ahmedabad-01",
+        "identifier": "Dynamic Slot D-99",
+        "title": "Dynamic Test Space with Auto-Generated IDs",
+        "description": "Testing automatic ID assignment and owner inheritance",
+        "parking_type": "covered",
+        "hourly_rate": 60,
+        "min_duration_hours": 1,
+        "max_duration_hours": 24,
+        "access_instructions": "Gate 1",
+        "security_features": [
+          "cctv"
+        ],
+        "has_ev_charging": false,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:40.368Z",
+        "updated_at": "2026-11-26T10:50:40.368Z",
+        "photos": [],
+        "vehicle_types": [
+          "car_sedan"
+        ],
+        "space_public_id": "PBN-S-XXU5Y5WQ",
+        "owner_public_id": "PBN-O-HST001"
+      }
+    ],
+    [
+      "spc-b-b3tzd",
+      {
+        "id": "spc-b-b3tzd",
+        "property_id": "025bbcfa-dee8-46c3-ac4c-c35d73b94d5c",
+        "provider_id": "eec4c362-c75f-496d-ae77-7295061057a8",
+        "identifier": "BAY-B1",
+        "title": "Host B Exclusive Covered Bay",
+        "parking_type": "covered",
+        "hourly_rate": 60,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:40.430Z",
+        "updated_at": "2026-11-26T10:50:40.430Z",
+        "space_public_id": "PBN-S-BN2GTAU7"
+      }
+    ],
+    [
+      "429e3fb9-5abf-417f-abc1-f0f517ab8786",
+      {
+        "id": "429e3fb9-5abf-417f-abc1-f0f517ab8786",
+        "property_id": "025bbcfa-dee8-46c3-ac4c-c35d73b94d5c",
+        "provider_id": "eec4c362-c75f-496d-ae77-7295061057a8",
+        "identifier": "BAY-B1",
+        "title": "Host B Exclusive Covered Bay",
+        "parking_type": "covered",
+        "hourly_rate": 60,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:40.430Z",
+        "updated_at": "2026-11-26T10:50:40.430Z",
+        "space_public_id": "PBN-S-YVXKZN7G"
+      }
+    ],
+    [
+      "spc-concurrency-ajlul",
+      {
+        "id": "spc-concurrency-ajlul",
+        "property_id": "ec233b63-f105-40f6-aa5a-47e697b85601",
+        "provider_id": "774d55fe-e16e-4b42-a270-0d9af66312ac",
+        "identifier": "CONC-01",
+        "title": "Concurrency Test Space",
+        "parking_type": "covered",
+        "hourly_rate": 50,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:40.367Z",
+        "updated_at": "2026-11-26T10:50:40.367Z",
+        "space_public_id": "PBN-S-4LM8LCHU"
+      }
+    ],
+    [
+      "acf0c405-0bfe-4db0-a03c-9f0e0c8be9c8",
+      {
+        "id": "acf0c405-0bfe-4db0-a03c-9f0e0c8be9c8",
+        "property_id": "ec233b63-f105-40f6-aa5a-47e697b85601",
+        "provider_id": "774d55fe-e16e-4b42-a270-0d9af66312ac",
+        "identifier": "CONC-01",
+        "title": "Concurrency Test Space",
+        "parking_type": "covered",
+        "hourly_rate": 50,
+        "status": "approved",
+        "is_active": true,
+        "created_at": "2026-11-26T10:50:40.367Z",
+        "updated_at": "2026-11-26T10:50:40.367Z",
+        "space_public_id": "PBN-S-6R9KCJKR"
+      }
+    ],
+    [
+      "spc-test-title-ttuui",
+      {
+        "id": "spc-test-title-ttuui",
+        "property_id": "prop-test-01",
+        "provider_id": "usr-host-ahmedabad-01",
+        "identifier": "Slot T-99",
+        "title": "Covered Parking at Titanium City Centre, Prahlad Nagar",
+        "parking_type": "covered",
+        "hourly_rate": 40,
+        "min_duration_hours": 1,
+        "max_duration_hours": 24,
+        "security_features": [
+          "cctv",
+          "gated_security"
+        ],
+        "has_ev_charging": true,
+        "status": "submitted",
+        "is_active": false,
+        "created_at": "2026-11-26T10:50:41.501Z",
+        "updated_at": "2026-11-26T10:50:41.501Z",
+        "space_public_id": "PBN-S-B5X839AW",
+        "owner_public_id": "PBN-O-HST001"
+      }
+    ],
+    [
+      "spc-test-photo-1795690249039",
+      {
+        "id": "spc-test-photo-1795690249039",
+        "property_id": "prop-test-photo-1795690249039",
+        "provider_id": "hst-test-photo-1795690249039",
+        "identifier": "Slot C-22",
+        "title": "VIP Stilt Bay near Taj Skyline",
+        "landmark": "Opposite Taj Skyline",
+        "google_maps_link": "https://maps.app.goo.gl/tajSkylinePin",
+        "parking_type": "covered",
+        "hourly_rate": 70,
+        "min_duration_hours": 1,
+        "max_duration_hours": 24,
+        "status": "approved",
+        "is_active": true,
+        "security_features": [
+          "cctv",
+          "valet"
+        ],
+        "has_ev_charging": true,
+        "property": {
+          "id": "prop-test-photo-1795690249039",
+          "provider_id": "hst-test-photo-1795690249039",
+          "title": "Shivalik Complex",
+          "property_type": "commercial_lot",
+          "address_line1": "Sindhu Bhavan Road",
+          "landmark": "Opposite Taj Skyline",
+          "area": "Bodakdev",
+          "city": "Ahmedabad",
+          "postal_code": "380054",
+          "latitude": 23.0456,
+          "longitude": 72.5123,
+          "google_maps_link": "https://maps.app.goo.gl/tajSkylinePin",
+          "created_at": "2026-11-26T10:50:49.039Z"
+        },
+        "photos": [
+          {
+            "id": "photo-1",
+            "space_id": "spc-test-photo-1795690249039",
+            "storage_path": "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80",
+            "is_primary": true,
+            "display_order": 0,
+            "created_at": "2026-11-26T10:50:49.039Z"
+          },
+          {
+            "id": "photo-2",
+            "space_id": "spc-test-photo-1795690249039",
+            "storage_path": "https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=800&q=80",
+            "is_primary": false,
+            "display_order": 1,
+            "created_at": "2026-11-26T10:50:49.039Z"
+          }
+        ],
+        "created_at": "2026-11-26T10:50:49.039Z",
+        "updated_at": "2026-11-26T10:50:49.039Z",
+        "space_public_id": "PBN-S-N9LNZZLN"
+      }
+    ]
+  ],
+  "vehicles": [
+    [
+      "veh-cust-09",
+      {
+        "id": "veh-cust-09",
+        "customer_id": "usr-test-cust-09",
+        "vehicle_type": "car_sedan",
+        "registration_number": "GJ 01 CD 5678",
+        "is_default": true,
+        "created_at": "2026-11-26T10:50:39.317Z"
+      }
+    ],
+    [
+      "veh-cust-09-scooter",
+      {
+        "id": "veh-cust-09-scooter",
+        "customer_id": "usr-test-cust-09",
+        "vehicle_type": "two_wheeler",
+        "registration_number": "GJ 01 EF 9900",
+        "is_default": false,
+        "created_at": "2026-11-26T10:50:39.387Z"
+      }
+    ],
+    [
+      "veh-b-y4894",
+      {
+        "id": "veh-b-y4894",
+        "customer_id": "usr-cust-b-tc1ru",
+        "vehicle_type": "car_sedan",
+        "registration_number": "GJ01AB1234",
+        "is_default": true,
+        "created_at": "2026-11-26T10:50:40.380Z"
+      }
+    ],
+    [
+      "ad05233e-953b-425b-a11c-f2f1f21cc1af",
+      {
+        "id": "ad05233e-953b-425b-a11c-f2f1f21cc1af",
+        "customer_id": "d38f1cc3-607f-4e0b-a35f-a2f0497b07d3",
+        "vehicle_type": "car_sedan",
+        "registration_number": "GJ01AB1234",
+        "is_default": true,
+        "created_at": "2026-11-26T10:50:40.380Z"
+      }
+    ],
+    [
+      "veh-del-b-5ovos",
+      {
+        "id": "veh-del-b-5ovos",
+        "customer_id": "usr-cust-b-tc1ru",
+        "vehicle_type": "car_suv",
+        "registration_number": "GJ01CD5678",
+        "is_default": false,
+        "created_at": "2026-11-26T10:50:40.401Z"
+      }
+    ],
+    [
+      "f6168017-c67a-4729-a505-dbe231e86a7d",
+      {
+        "id": "f6168017-c67a-4729-a505-dbe231e86a7d",
+        "customer_id": "d38f1cc3-607f-4e0b-a35f-a2f0497b07d3",
+        "vehicle_type": "car_suv",
+        "registration_number": "GJ01CD5678",
+        "is_default": false,
+        "created_at": "2026-11-26T10:50:40.401Z"
+      }
+    ]
+  ],
+  "holds": [],
+  "bookings": [
+    [
+      "bkg-test-xih3b",
+      {
+        "id": "bkg-test-xih3b",
+        "booking_reference": "PKB-TEST-001",
+        "space_id": "spc-test",
+        "customer_id": "cust-checkin-ayggu",
+        "provider_id": "host-checkin-c8miu",
+        "vehicle_id": "veh-1",
+        "start_time": "2026-11-26T10:40:39.049Z",
+        "end_time": "2026-11-26T12:50:39.049Z",
+        "status": "active",
+        "total_hours": 2,
+        "base_amount": 80,
+        "platform_fee": 12,
+        "tax_amount": 2.16,
+        "total_amount": 94.16,
+        "provider_payout_amount": 80,
+        "created_at": "2026-11-26T10:50:39.049Z",
+        "updated_at": "2026-11-26T10:50:39.053Z",
+        "booking_customer_reference": "PBN-REF-MV6YTEY8",
+        "customer_display_name": "Valued Customer",
+        "check_in_at": "2026-11-26T10:50:39.053Z"
+      }
+    ],
+    [
+      "bkg-sec-ai4ou",
+      {
+        "id": "bkg-sec-ai4ou",
+        "booking_reference": "PKB-SEC-002",
+        "space_id": "spc-test",
+        "customer_id": "cust-legit",
+        "provider_id": "host-1",
+        "vehicle_id": "veh-1",
+        "start_time": "2026-11-26T10:50:39.062Z",
+        "end_time": "2026-11-26T11:50:39.062Z",
+        "status": "confirmed",
+        "total_hours": 1,
+        "base_amount": 40,
+        "platform_fee": 6,
+        "tax_amount": 1.08,
+        "total_amount": 47.08,
+        "provider_payout_amount": 40,
+        "created_at": "2026-11-26T10:50:39.062Z",
+        "updated_at": "2026-11-26T10:50:39.062Z",
+        "booking_customer_reference": "PBN-REF-Y6K5TTFJ",
+        "customer_display_name": "Valued Customer"
+      }
+    ],
+    [
+      "bkg-hostin-ajliv",
+      {
+        "id": "bkg-hostin-ajliv",
+        "booking_reference": "PKB-HOSTIN-003",
+        "space_id": "spc-test",
+        "customer_id": "cust-hostin",
+        "provider_id": "host-guard",
+        "vehicle_id": "veh-1",
+        "start_time": "2026-11-26T10:50:39.070Z",
+        "end_time": "2026-11-26T11:50:39.070Z",
+        "status": "active",
+        "total_hours": 1,
+        "base_amount": 40,
+        "platform_fee": 6,
+        "tax_amount": 1.08,
+        "total_amount": 47.08,
+        "provider_payout_amount": 40,
+        "created_at": "2026-11-26T10:50:39.070Z",
+        "updated_at": "2026-11-26T10:50:39.077Z",
+        "booking_customer_reference": "PBN-REF-EF3F38G5",
+        "customer_display_name": "Valued Customer",
+        "check_in_at": "2026-11-26T10:50:39.077Z"
+      }
+    ],
+    [
+      "bkg-ontime-gy2er",
+      {
+        "id": "bkg-ontime-gy2er",
+        "booking_reference": "PKB-ONTIME-004",
+        "space_id": "spc-test",
+        "customer_id": "cust-checkout-ontime",
+        "provider_id": "host-1",
+        "vehicle_id": "veh-1",
+        "start_time": "2026-11-26T09:50:39.148Z",
+        "end_time": "2026-11-26T11:50:39.148Z",
+        "status": "active",
+        "total_hours": 2,
+        "base_amount": 80,
+        "platform_fee": 12,
+        "tax_amount": 2.16,
+        "total_amount": 94.16,
+        "provider_payout_amount": 80,
+        "check_in_at": "2026-11-26T09:50:39.148Z",
+        "created_at": "2026-11-26T10:50:39.148Z",
+        "updated_at": "2026-11-26T10:50:39.148Z",
+        "booking_customer_reference": "PBN-REF-MJY8FSEB",
+        "customer_display_name": "Valued Customer"
+      }
+    ],
+    [
+      "bkg-overstay-4ns7f",
+      {
+        "id": "bkg-overstay-4ns7f",
+        "booking_reference": "PKB-OVERSTAY-005",
+        "space_id": "spc-test",
+        "customer_id": "cust-overstay",
+        "provider_id": "host-1",
+        "vehicle_id": "veh-1",
+        "start_time": "2026-11-26T08:05:39.181Z",
+        "end_time": "2026-11-26T10:05:39.181Z",
+        "status": "active",
+        "total_hours": 2,
+        "base_amount": 80,
+        "platform_fee": 12,
+        "tax_amount": 2.16,
+        "total_amount": 94.16,
+        "provider_payout_amount": 80,
+        "check_in_at": "2026-11-26T08:05:39.181Z",
+        "created_at": "2026-11-26T10:50:39.181Z",
+        "updated_at": "2026-11-26T10:50:39.181Z",
+        "booking_customer_reference": "PBN-REF-ZDHB2YKX",
+        "customer_display_name": "Valued Customer"
+      }
+    ],
+    [
+      "bk-test-1795690239176",
+      {
+        "id": "bk-test-1795690239176",
+        "booking_reference": "PKB-TEST-8899",
+        "space_id": "sp-test-1795690239176",
+        "customer_id": "cust-test-1795690239176",
+        "start_time": "2026-11-26T11:50:39.274Z",
+        "end_time": "2026-11-26T12:50:39.274Z",
+        "vehicle_plate": "GJ01AB1234",
+        "vehicle_type": "car",
+        "base_amount": 80,
+        "platform_fee": 12,
+        "tax_amount": 2.16,
+        "total_amount": 94.16,
+        "provider_payout_amount": 80,
+        "status": "confirmed",
+        "payment_status": "paid",
+        "payment_intent_id": "pay_test_1795690239274",
+        "created_at": "2026-11-26T10:50:39.274Z",
+        "updated_at": "2026-11-26T10:50:39.274Z",
+        "booking_customer_reference": "PBN-REF-NHZZMPHJ",
+        "customer_display_name": "Rahul S.",
+        "space_public_id": "PBN-S-QKU4A9GX",
+        "owner_public_id": "PBN-O-F8VNJCUX"
+      }
+    ],
+    [
+      "bkg-cust-09-01",
+      {
+        "id": "bkg-cust-09-01",
+        "booking_reference": "PKB-20261127-TEST",
+        "space_id": "spc-prahladnagar-01",
+        "customer_id": "usr-test-cust-09",
+        "provider_id": "usr-host-ahmedabad-01",
+        "vehicle_id": "veh-cust-09",
+        "start_time": "2026-11-27T09:00:00.000Z",
+        "end_time": "2026-11-27T12:00:00.000Z",
+        "status": "hold_pending",
+        "total_hours": 3,
+        "base_amount": 120,
+        "platform_fee": 18,
+        "tax_amount": 3.24,
+        "total_amount": 141.24,
+        "provider_payout_amount": 120,
+        "created_at": "2026-11-26T10:50:39.337Z",
+        "updated_at": "2026-11-26T10:50:39.337Z",
+        "booking_customer_reference": "PBN-REF-URQ5GH6L",
+        "customer_display_name": "Anand S.",
+        "space_public_id": "PBN-S-AHM001",
+        "owner_public_id": "PBN-O-HST001"
+      }
+    ],
+    [
+      "bk-test-existing-01",
+      {
+        "id": "bk-test-existing-01",
+        "booking_reference": "PKB-TEST-OVL1",
+        "booking_customer_reference": "PBN-REF-OVL1",
+        "customer_display_name": "Ankit S.",
+        "space_id": "spc-overlap-test-nbech",
+        "customer_id": "usr-cust-first-booker",
+        "provider_id": "usr-host-overlap-01",
+        "vehicle_id": "veh-01",
+        "start_time": "2026-11-27T10:00:00Z",
+        "end_time": "2026-11-27T14:00:00Z",
+        "status": "confirmed",
+        "total_hours": 4,
+        "base_amount": 200,
+        "platform_fee": 30,
+        "tax_amount": 5.4,
+        "total_amount": 235.4,
+        "provider_payout_amount": 170,
+        "created_at": "2026-11-26T10:50:40.334Z",
+        "updated_at": "2026-11-26T10:50:40.334Z",
+        "space_public_id": "PBN-S-OVL391"
+      }
+    ],
+    [
+      "bkg-b-zsz1y",
+      {
+        "id": "bkg-b-zsz1y",
+        "booking_reference": "PKB-TEST-B",
+        "booking_customer_reference": "PBN-REF-8JGWHGMT",
+        "customer_display_name": "Driver B",
+        "space_id": "fb202759-7fc2-4760-af34-578155ca1646",
+        "customer_id": "d38f1cc3-607f-4e0b-a35f-a2f0497b07d3",
+        "provider_id": "29799330-8b99-4203-a293-e9c391277a42",
+        "start_time": "2026-12-01T10:00:00Z",
+        "end_time": "2026-12-01T12:00:00Z",
+        "status": "confirmed",
+        "total_hours": 2,
+        "base_amount": 100,
+        "platform_fee": 15,
+        "tax_amount": 2.7,
+        "total_amount": 117.7,
+        "provider_payout_amount": 100,
+        "created_at": "2026-11-26T10:50:40.415Z",
+        "updated_at": "2026-11-26T10:50:40.415Z",
+        "vehicle_id": "25247184-ddbd-4e89-b1a6-1e7dea63dc50"
+      }
+    ],
+    [
+      "de44131e-4b2d-4ddd-a377-7194d072382e",
+      {
+        "id": "de44131e-4b2d-4ddd-a377-7194d072382e",
+        "booking_reference": "PKB-TEST-B",
+        "booking_customer_reference": "PBN-REF-8JGWHGMT",
+        "customer_display_name": "Driver B",
+        "space_id": "fb202759-7fc2-4760-af34-578155ca1646",
+        "customer_id": "d38f1cc3-607f-4e0b-a35f-a2f0497b07d3",
+        "provider_id": "29799330-8b99-4203-a293-e9c391277a42",
+        "start_time": "2026-12-01T10:00:00Z",
+        "end_time": "2026-12-01T12:00:00Z",
+        "status": "confirmed",
+        "total_hours": 2,
+        "base_amount": 100,
+        "platform_fee": 15,
+        "tax_amount": 2.7,
+        "total_amount": 117.7,
+        "provider_payout_amount": 100,
+        "created_at": "2026-11-26T10:50:40.415Z",
+        "updated_at": "2026-11-26T10:50:40.415Z",
+        "vehicle_id": "25247184-ddbd-4e89-b1a6-1e7dea63dc50"
+      }
+    ],
+    [
+      "bkg-webhook-mpql5",
+      {
+        "id": "bkg-webhook-mpql5",
+        "booking_reference": "PKB-WH-TEST",
+        "space_id": "9a4ef11d-fb71-4457-ae51-3430220630bf",
+        "customer_id": "1da702f0-a995-4b50-a337-ae7e92a5a70b",
+        "provider_id": "771ee177-6bf1-4043-aa0a-e2b4f911bec9",
+        "start_time": "2026-12-05T10:00:00Z",
+        "end_time": "2026-12-05T14:00:00Z",
+        "status": "confirmed",
+        "total_hours": 4,
+        "base_amount": 200,
+        "platform_fee": 30,
+        "tax_amount": 5.4,
+        "total_amount": 235.4,
+        "provider_payout_amount": 200,
+        "created_at": "2026-11-26T10:50:40.468Z",
+        "updated_at": "2026-11-26T10:50:40.487Z",
+        "vehicle_id": "5107b8cf-68a2-4831-8772-6b2ae0693b18",
+        "booking_customer_reference": "PBN-REF-RDRV5HRN",
+        "customer_display_name": "Valued C."
+      }
+    ],
+    [
+      "f0a1279f-edc1-4f66-a743-2ad6641aeb0d",
+      {
+        "id": "f0a1279f-edc1-4f66-a743-2ad6641aeb0d",
+        "booking_reference": "PKB-WH-TEST",
+        "space_id": "9a4ef11d-fb71-4457-ae51-3430220630bf",
+        "customer_id": "1da702f0-a995-4b50-a337-ae7e92a5a70b",
+        "provider_id": "771ee177-6bf1-4043-aa0a-e2b4f911bec9",
+        "start_time": "2026-12-05T10:00:00Z",
+        "end_time": "2026-12-05T14:00:00Z",
+        "status": "hold_pending",
+        "total_hours": 4,
+        "base_amount": 200,
+        "platform_fee": 30,
+        "tax_amount": 5.4,
+        "total_amount": 235.4,
+        "provider_payout_amount": 200,
+        "created_at": "2026-11-26T10:50:40.468Z",
+        "updated_at": "2026-11-26T10:50:40.469Z",
+        "vehicle_id": "5107b8cf-68a2-4831-8772-6b2ae0693b18",
+        "booking_customer_reference": "PBN-REF-RDRV5HRN",
+        "customer_display_name": "Valued C."
+      }
+    ]
+  ],
+  "credentials": [
+    [
+      "admin@parkbnb.in",
+      {
+        "userId": "usr-admin-system-01",
+        "email": "admin@parkbnb.in",
+        "passwordHash": "74fdce70f14ffcb28e65addf1dac5284c9f9d554463010c249c9c12280e29ff5789edc3bccac327ec2c53ef44d38de126ad54ff69ff6be42e17e3e21752f011c",
+        "salt": "b5babb84333c3f44ce71f52f728c1fe7",
+        "role": "super_admin",
+        "fullName": "ParkBnB Administrator",
+        "phone": "9876543210",
+        "createdAt": "2026-11-26T10:50:38.734Z"
+      }
+    ],
+    [
+      "newcustomer_1795690240639@parkbnb.test",
+      {
+        "userId": "6283b8de-b8a2-4682-a93b-3ac23d1bf057",
+        "email": "newcustomer_1795690240639@parkbnb.test",
+        "passwordHash": "aac7d952ec73d1448a88c31accee24fe1e4c8e6b57b0e6a8671705f25061191645e50ca1a63a20763608b6a3e904e736153e7fdb6d3b47ea93a15214c6028e95",
+        "salt": "acf985d31931a05c4e4c202fd1415f90",
+        "role": "customer",
+        "fullName": "Kavita Sharma",
+        "phone": "9876549999",
+        "createdAt": "2026-11-26T10:50:40.813Z"
+      }
+    ],
+    [
+      "host_1795690241006@parkbnb.test",
+      {
+        "userId": "40aa3bc8-233c-42b9-b7c3-9cc45f9adfa1",
+        "email": "host_1795690241006@parkbnb.test",
+        "passwordHash": "d1820b862a4657afdf5f0632ec4d086e286a6556ff243542cbc9b5b5dd1e0df066af155cab5bea8806fa8b1999ff09bef49afc5322d05789a94f3bec6a7a347e",
+        "salt": "2268786a7ee356d138547ea7e9336f25",
+        "role": "provider",
+        "fullName": "Manish Verma",
+        "createdAt": "2026-11-26T10:50:41.158Z"
+      }
+    ]
+  ],
+  "notifications": [],
+  "availabilityBlocks": [],
+  "refundRecords": [],
+  "deletionRequests": [],
+  "ledger": [],
+  "reviews": [],
+  "tickets": [],
+  "auditLogs": [],
+  "customerDataAccessLogs": [],
+  "settings": {
+    "platformCommissionRate": 0.15,
+    "gstRate": 0.18,
+    "temporaryHoldMinutes": 10,
+    "cancellationWindowHours": 2,
+    "emergencyMaintenanceMode": false,
+    "instantPayoutsEnabled": true,
+    "supportHotline": "+91 79 4900 1234",
+    "supportEmail": "ops@parkbnb.in",
+    "activeZones": [
+      "Prahlad Nagar",
+      "Sindhu Bhavan Road / Bodakdev",
+      "Navrangpura & CG Road",
+      "Ashram Road",
+      "Vastrapur"
+    ],
+    "listingTitleOptions": [
+      "Covered Basement Parking Bay",
+      "Prime Surface Parking Slot with Security",
+      "Residential Gated Stilt Parking",
+      "Covered Parking Bay with EV Charging Socket",
+      "Commercial Multi-Level Parking Slot",
+      "Secure Overnight Parking Bay",
+      "Private Driveway Parking Space",
+      "Open-Air Visitor Parking Bay"
+    ]
+  }
+}

@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import {
   Profile,
   ProviderProfile,
@@ -164,6 +166,355 @@ class MarketplaceStore {
 
   constructor() {
     this.initializeSystemBootstrap();
+    this.loadFromDisk();
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL) {
+      this.syncFromSupabase().catch((err) => {
+        console.warn('[MarketplaceStore] Initial Supabase sync deferred/non-blocking:', err?.message || err);
+      });
+    }
+  }
+
+  // -------------------------------------------------------------
+  // DURABLE DISK PERSISTENCE & CLOUD DATABASE SYNC
+  // -------------------------------------------------------------
+  public saveToDisk(): void {
+    if (typeof window !== 'undefined') return;
+    if ((process.env.NODE_ENV === 'test' || process.argv.some(a => a.includes('--test'))) && !process.env.PARKBNB_STORE_FILE) {
+      return;
+    }
+    try {
+      const dataDir = path.resolve(process.cwd(), 'data');
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      const storeFile = process.env.PARKBNB_STORE_FILE || path.join(dataDir, 'parkbnb-store.json');
+
+      // Seamless multi-process merge: retain any entries written concurrently by other worker processes
+      if (fs.existsSync(storeFile)) {
+        try {
+          const raw = fs.readFileSync(storeFile, 'utf8');
+          if (raw && raw.trim().length > 0) {
+            const diskData = JSON.parse(raw);
+            if (Array.isArray(diskData.profiles)) {
+              for (const [k, v] of diskData.profiles) {
+                if (!this.profiles.has(k)) this.profiles.set(k, v);
+              }
+            }
+            if (Array.isArray(diskData.providerProfiles)) {
+              for (const [k, v] of diskData.providerProfiles) {
+                if (!this.providerProfiles.has(k)) this.providerProfiles.set(k, v);
+              }
+            }
+            if (Array.isArray(diskData.properties)) {
+              for (const [k, v] of diskData.properties) {
+                if (!this.properties.has(k)) this.properties.set(k, v);
+              }
+            }
+            if (Array.isArray(diskData.spaces)) {
+              for (const [k, v] of diskData.spaces) {
+                if (!this.spaces.has(k)) this.spaces.set(k, v);
+              }
+            }
+            if (Array.isArray(diskData.vehicles)) {
+              for (const [k, v] of diskData.vehicles) {
+                if (!this.vehicles.has(k)) this.vehicles.set(k, v);
+              }
+            }
+            if (Array.isArray(diskData.bookings)) {
+              for (const [k, v] of diskData.bookings) {
+                if (!this.bookings.has(k)) this.bookings.set(k, v);
+              }
+            }
+            if (Array.isArray(diskData.credentials)) {
+              for (const [k, v] of diskData.credentials) {
+                if (!this.credentials.has(k)) this.credentials.set(k, v);
+              }
+            }
+          }
+        } catch {
+          // Graceful non-blocking catch if concurrent file read is mid-write
+        }
+      }
+
+      const payload = {
+        version: 1,
+        saved_at: new Date().toISOString(),
+        profiles: Array.from(this.profiles.entries()),
+        providerProfiles: Array.from(this.providerProfiles.entries()),
+        properties: Array.from(this.properties.entries()),
+        spaces: Array.from(this.spaces.entries()),
+        vehicles: Array.from(this.vehicles.entries()),
+        holds: Array.from(this.holds.entries()),
+        bookings: Array.from(this.bookings.entries()),
+        credentials: Array.from(this.credentials.entries()),
+        notifications: Array.from(this.notifications.entries()),
+        availabilityBlocks: Array.from(this.availabilityBlocks.entries()),
+        refundRecords: Array.from(this.refundRecords.entries()),
+        deletionRequests: Array.from(this.deletionRequests.entries()),
+        ledger: this.ledger,
+        reviews: this.reviews,
+        tickets: this.tickets,
+        auditLogs: this.auditLogs,
+        customerDataAccessLogs: this.customerDataAccessLogs,
+        settings: this.settings,
+      };
+      const serialized = JSON.stringify(payload, null, 2);
+      try {
+        const tmpFile = `${storeFile}.tmp.${process.pid}.${Date.now()}`;
+        fs.writeFileSync(tmpFile, serialized, 'utf8');
+        try {
+          fs.renameSync(tmpFile, storeFile);
+        } catch {
+          fs.copyFileSync(tmpFile, storeFile);
+          try { fs.unlinkSync(tmpFile); } catch {}
+        }
+      } catch {
+        fs.writeFileSync(storeFile, serialized, 'utf8');
+      }
+    } catch (err) {
+      console.warn('[MarketplaceStore] Failed to write store to disk:', err);
+    }
+  }
+
+  public loadFromDisk(): void {
+    if (typeof window !== 'undefined') return;
+    if ((process.env.NODE_ENV === 'test' || process.argv.some(a => a.includes('--test'))) && !process.env.PARKBNB_STORE_FILE) {
+      return;
+    }
+    try {
+      const storeFile = process.env.PARKBNB_STORE_FILE || path.resolve(process.cwd(), 'data', 'parkbnb-store.json');
+      if (!fs.existsSync(storeFile)) return;
+      const raw = fs.readFileSync(storeFile, 'utf8');
+      if (!raw || raw.trim().length === 0) return;
+      const data = JSON.parse(raw);
+
+      if (Array.isArray(data.profiles)) {
+        for (const [k, v] of data.profiles) {
+          this.profiles.set(k, v);
+        }
+      }
+      if (Array.isArray(data.providerProfiles)) {
+        for (const [k, v] of data.providerProfiles) {
+          this.providerProfiles.set(k, v);
+        }
+      }
+      if (Array.isArray(data.properties)) {
+        for (const [k, v] of data.properties) {
+          this.properties.set(k, v);
+        }
+      }
+      if (Array.isArray(data.spaces)) {
+        for (const [k, v] of data.spaces) {
+          this.spaces.set(k, v);
+        }
+      }
+      if (Array.isArray(data.vehicles)) {
+        for (const [k, v] of data.vehicles) {
+          this.vehicles.set(k, v);
+        }
+      }
+      if (Array.isArray(data.holds)) {
+        for (const [k, v] of data.holds) {
+          this.holds.set(k, v);
+        }
+      }
+      if (Array.isArray(data.bookings)) {
+        for (const [k, v] of data.bookings) {
+          this.bookings.set(k, v);
+        }
+      }
+      if (Array.isArray(data.credentials)) {
+        for (const [k, v] of data.credentials) {
+          this.credentials.set(k, v);
+        }
+      }
+      if (Array.isArray(data.notifications)) {
+        for (const [k, v] of data.notifications) {
+          this.notifications.set(k, v);
+        }
+      }
+      if (Array.isArray(data.availabilityBlocks)) {
+        for (const [k, v] of data.availabilityBlocks) {
+          this.availabilityBlocks.set(k, v);
+        }
+      }
+      if (Array.isArray(data.refundRecords)) {
+        for (const [k, v] of data.refundRecords) {
+          this.refundRecords.set(k, v);
+        }
+      }
+      if (Array.isArray(data.deletionRequests)) {
+        for (const [k, v] of data.deletionRequests) {
+          this.deletionRequests.set(k, v);
+        }
+      }
+      if (Array.isArray(data.ledger) && data.ledger.length > 0) {
+        this.ledger = data.ledger;
+      }
+      if (Array.isArray(data.reviews) && data.reviews.length > 0) {
+        this.reviews = data.reviews;
+      }
+      if (Array.isArray(data.tickets) && data.tickets.length > 0) {
+        this.tickets = data.tickets;
+      }
+      if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) {
+        this.auditLogs = data.auditLogs;
+      }
+      if (Array.isArray(data.customerDataAccessLogs) && data.customerDataAccessLogs.length > 0) {
+        this.customerDataAccessLogs = data.customerDataAccessLogs;
+      }
+      if (data.settings && typeof data.settings === 'object') {
+        this.settings = { ...this.settings, ...data.settings };
+      }
+      console.info(`[MarketplaceStore] Hydrated from disk: ${this.spaces.size} spaces, ${this.properties.size} properties, ${this.profiles.size} profiles, ${this.bookings.size} bookings.`);
+    } catch (err) {
+      console.warn('[MarketplaceStore] Failed to load store from disk:', err);
+    }
+  }
+
+  public async syncFromSupabase(): Promise<void> {
+    try {
+      const { getSupabaseServiceRoleClient } = await import('@/lib/supabase/service-role');
+      const supabase = getSupabaseServiceRoleClient();
+      if (!supabase) return;
+
+      // 1. Sync Profiles
+      const { data: profilesData } = await supabase.from('profiles').select('*');
+      if (profilesData && Array.isArray(profilesData)) {
+        for (const p of profilesData) {
+          const existing = this.profiles.get(p.id);
+          this.profiles.set(p.id, {
+            id: p.id,
+            customer_public_id: p.customer_public_id || existing?.customer_public_id || generateCustomerPublicId(),
+            full_name: p.full_name || existing?.full_name || 'Customer',
+            email: p.email || existing?.email || null,
+            phone: p.phone || existing?.phone || null,
+            phone_verified: Boolean(p.phone_verified),
+            role: p.role || existing?.role || 'customer',
+            status: p.status || existing?.status || 'active',
+            avatar_url: p.avatar_url || existing?.avatar_url || null,
+            created_at: p.created_at || existing?.created_at || new Date().toISOString(),
+            updated_at: p.updated_at || existing?.updated_at || new Date().toISOString(),
+          });
+        }
+      }
+
+      // 2. Sync Provider Profiles
+      const { data: providerData } = await supabase.from('provider_profiles').select('*');
+      if (providerData && Array.isArray(providerData)) {
+        for (const p of providerData) {
+          const existing = this.providerProfiles.get(p.id);
+          this.providerProfiles.set(p.id, {
+            id: p.id,
+            owner_public_id: p.owner_public_id || existing?.owner_public_id || generateOwnerPublicId(),
+            provider_type: p.provider_type || existing?.provider_type || 'individual_residential',
+            business_name: p.business_name || existing?.business_name || null,
+            pan_number: p.pan_number || existing?.pan_number || null,
+            gstin: p.gstin || existing?.gstin || null,
+            verification_status: p.verification_status || existing?.verification_status || 'approved',
+            verified_at: p.verified_at || existing?.verified_at || null,
+            verified_by: p.verified_by || existing?.verified_by || null,
+            bank_name: p.bank_name || existing?.bank_name || null,
+            bank_account_holder: p.bank_account_holder || existing?.bank_account_holder || null,
+            bank_account_number: p.bank_account_number || existing?.bank_account_number || null,
+            bank_ifsc_code: p.bank_ifsc_code || existing?.bank_ifsc_code || null,
+            upi_id: p.upi_id || existing?.upi_id || null,
+            payout_preference: p.payout_preference || existing?.payout_preference || 'bank_transfer',
+            commission_rate: p.commission_rate || existing?.commission_rate || 0.15,
+            created_at: p.created_at || existing?.created_at || new Date().toISOString(),
+            updated_at: p.updated_at || existing?.updated_at || new Date().toISOString(),
+          });
+        }
+      }
+
+      // 3. Sync Properties
+      const { data: propertiesData } = await supabase.from('properties').select('*');
+      if (propertiesData && Array.isArray(propertiesData)) {
+        for (const prop of propertiesData) {
+          this.properties.set(prop.id, {
+            id: prop.id,
+            provider_id: prop.provider_id,
+            title: prop.title,
+            property_type: prop.property_type,
+            address_line1: prop.address_line1,
+            address_line2: prop.address_line2 || null,
+            landmark: prop.landmark || null,
+            google_maps_link: prop.google_maps_link || null,
+            area: prop.area,
+            city: prop.city,
+            postal_code: prop.postal_code,
+            latitude: Number(prop.latitude || 23.0225),
+            longitude: Number(prop.longitude || 72.5714),
+            created_at: prop.created_at || new Date().toISOString(),
+          });
+        }
+      }
+
+      // 4. Sync Parking Spaces
+      const { data: spacesData } = await supabase
+        .from('parking_spaces')
+        .select(`
+          *,
+          property:properties (*),
+          photos:parking_space_photos (*)
+        `);
+      if (spacesData && Array.isArray(spacesData)) {
+        for (const s of spacesData) {
+          const provider = this.providerProfiles.get(s.provider_id);
+          const existing = this.spaces.get(s.id);
+          const resolvedProperty = s.property || this.properties.get(s.property_id);
+          if (resolvedProperty && !this.properties.has(resolvedProperty.id)) {
+            this.properties.set(resolvedProperty.id, resolvedProperty);
+          }
+          this.spaces.set(s.id, {
+            ...s,
+            space_public_id: s.space_public_id || existing?.space_public_id || generateSpacePublicId(),
+            owner_public_id: s.owner_public_id || existing?.owner_public_id || provider?.owner_public_id,
+            property: resolvedProperty,
+            photos: s.photos || existing?.photos || [],
+          });
+        }
+      }
+
+      // 5. Sync Customer Vehicles
+      const { data: vehiclesData } = await supabase.from('customer_vehicles').select('*');
+      if (vehiclesData && Array.isArray(vehiclesData)) {
+        for (const v of vehiclesData) {
+          this.vehicles.set(v.id, v);
+        }
+      }
+
+      // 6. Sync Bookings
+      const { data: bookingsData } = await supabase.from('bookings').select('*');
+      if (bookingsData && Array.isArray(bookingsData)) {
+        for (const b of bookingsData) {
+          const existing = this.bookings.get(b.id);
+          this.bookings.set(b.id, {
+            ...b,
+            booking_customer_reference: b.booking_customer_reference || existing?.booking_customer_reference || generateBookingCustomerReference(),
+            space_public_id: b.space_public_id || existing?.space_public_id,
+            owner_public_id: b.owner_public_id || existing?.owner_public_id,
+            customer_display_name: b.customer_display_name || existing?.customer_display_name,
+          });
+        }
+      }
+
+      this.saveToDisk();
+      console.info(`[MarketplaceStore] Synced from Supabase: ${this.spaces.size} spaces, ${this.properties.size} properties, ${this.bookings.size} bookings.`);
+    } catch (err) {
+      console.warn('[MarketplaceStore] Supabase sync notice:', err);
+    }
+  }
+
+  private hydrateSpaceRelations(space: ParkingSpace): ParkingSpace {
+    let resolved = space;
+    if (!resolved.property && resolved.property_id) {
+      const prop = this.properties.get(resolved.property_id);
+      if (prop) {
+        resolved = { ...resolved, property: prop };
+      }
+    }
+    return resolved;
   }
 
   private initializeSystemBootstrap() {
@@ -847,6 +1198,7 @@ class MarketplaceStore {
   // =============================================================
   public saveAuthCredentials(credential: AuthCredential): void {
     this.credentials.set(credential.email.toLowerCase().trim(), credential);
+    this.saveToDisk();
   }
 
   public getAuthCredential(email: string): AuthCredential | undefined {
@@ -901,6 +1253,7 @@ class MarketplaceStore {
       status: profile.status || 'active',
     };
     this.profiles.set(profile.id, cleanProfile);
+    this.saveToDisk();
     return cleanProfile;
   }
 
@@ -909,6 +1262,7 @@ class MarketplaceStore {
     if (!existing) return null;
     const updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
     this.profiles.set(id, updated);
+    this.saveToDisk();
     return updated;
   }
 
@@ -1405,6 +1759,7 @@ class MarketplaceStore {
       owner_public_id: provider.owner_public_id || generateOwnerPublicId(),
     };
     this.providerProfiles.set(cleanProvider.id, cleanProvider);
+    this.saveToDisk();
     return cleanProvider;
   }
 
@@ -1461,6 +1816,7 @@ class MarketplaceStore {
       operator_email: staffEmail,
     });
 
+    this.saveToDisk();
     return { success: true, provider, deactivatedSpacesCount };
   }
 
@@ -1510,6 +1866,7 @@ class MarketplaceStore {
       operator_email: staffEmail,
     });
 
+    this.saveToDisk();
     return { success: true, provider };
   }
 
@@ -1606,6 +1963,7 @@ class MarketplaceStore {
       details: reason || `Admin updated host KYC verification status to ${status}.`,
     });
 
+    this.saveToDisk();
     return updated;
   }
 
@@ -1633,6 +1991,7 @@ class MarketplaceStore {
       details: `Custom commission rate updated to ${(customRate * 100).toFixed(1)}%.`,
     });
 
+    this.saveToDisk();
     return updated;
   }
 
@@ -1705,6 +2064,7 @@ class MarketplaceStore {
       details: `Disbursement banking details updated: IFSC ${details.bank_ifsc_code || existing.bank_ifsc_code || 'N/A'}, UPI ${details.upi_id || existing.upi_id || 'N/A'}.`,
     });
 
+    this.saveToDisk();
     return updated;
   }
 
@@ -1712,28 +2072,32 @@ class MarketplaceStore {
   // PARKING SPACES & PROPERTIES
   // =============================================================
   public getAllSpaces(): ParkingSpace[] {
-    return Array.from(this.spaces.values());
+    return Array.from(this.spaces.values()).map(s => this.hydrateSpaceRelations(s));
   }
 
   public getApprovedPublicSpaces(): ParkingSpace[] {
-    return Array.from(this.spaces.values()).filter(
-      s => s.status === 'approved' && s.is_active
-    );
+    return Array.from(this.spaces.values())
+      .filter(s => s.status === 'approved' && s.is_active)
+      .map(s => this.hydrateSpaceRelations(s));
   }
 
   public getSpaceById(id: string): ParkingSpace | undefined {
-    return this.spaces.get(id);
+    const s = this.spaces.get(id);
+    return s ? this.hydrateSpaceRelations(s) : undefined;
   }
 
   public getSpacesByProvider(providerId: string): ParkingSpace[] {
-    return Array.from(this.spaces.values()).filter(s => s.provider_id === providerId);
+    return Array.from(this.spaces.values())
+      .filter(s => s.provider_id === providerId)
+      .map(s => this.hydrateSpaceRelations(s));
   }
 
   public getSpaceBySpacePublicId(publicId: string): ParkingSpace | undefined {
     const clean = publicId.trim().toUpperCase();
-    return Array.from(this.spaces.values()).find(
+    const s = Array.from(this.spaces.values()).find(
       s => s.space_public_id && s.space_public_id.toUpperCase() === clean
     );
+    return s ? this.hydrateSpaceRelations(s) : undefined;
   }
 
   public createSpace(space: ParkingSpace): ParkingSpace {
@@ -1743,7 +2107,11 @@ class MarketplaceStore {
       space_public_id: space.space_public_id || generateSpacePublicId(),
       owner_public_id: space.owner_public_id || provider?.owner_public_id || undefined,
     };
+    if (space.property && !this.properties.has(space.property.id)) {
+      this.properties.set(space.property.id, space.property);
+    }
     this.spaces.set(space.id, cleanSpace);
+    this.saveToDisk();
     return cleanSpace;
   }
 
@@ -1752,11 +2120,14 @@ class MarketplaceStore {
     if (!existing) return null;
     const updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
     this.spaces.set(id, updated);
+    this.saveToDisk();
     return updated;
   }
 
   public deleteSpace(id: string): boolean {
-    return this.spaces.delete(id);
+    const deleted = this.spaces.delete(id);
+    if (deleted) this.saveToDisk();
+    return deleted;
   }
 
   public updateSpacePricing(params: {
@@ -1788,11 +2159,13 @@ class MarketplaceStore {
       details: `Hourly rate adjusted from ₹${oldHourly} to ₹${params.hourlyRate}.`,
     });
 
+    this.saveToDisk();
     return updated;
   }
 
   public createProperty(property: Property): Property {
     this.properties.set(property.id, property);
+    this.saveToDisk();
     return property;
   }
 
@@ -1820,6 +2193,7 @@ class MarketplaceStore {
       }
     }
     this.vehicles.set(vehicle.id, vehicle);
+    this.saveToDisk();
     return vehicle;
   }
 
@@ -1831,13 +2205,16 @@ class MarketplaceStore {
         vehicle.is_default = (vehicle.id === id);
       }
     }
+    this.saveToDisk();
     return true;
   }
 
   public deleteVehicle(id: string, customerId: string): boolean {
     const v = this.vehicles.get(id);
     if (!v || v.customer_id !== customerId) return false;
-    return this.vehicles.delete(id);
+    const res = this.vehicles.delete(id);
+    if (res) this.saveToDisk();
+    return res;
   }
 
   public findVehicleByPlate(customerId: string, regNumber: string): CustomerVehicle | undefined {
@@ -2145,6 +2522,7 @@ class MarketplaceStore {
       owner_public_id: booking.owner_public_id || provider?.owner_public_id,
     };
     this.bookings.set(booking.id, bookingWithPrivacy);
+    this.saveToDisk();
     return bookingWithPrivacy;
   }
 
@@ -2205,6 +2583,7 @@ class MarketplaceStore {
       updated_at: new Date().toISOString(),
     };
     this.bookings.set(id, updated);
+    this.saveToDisk();
     return updated;
   }
 
@@ -2412,6 +2791,7 @@ class MarketplaceStore {
     };
 
     this.bookings.set(bookingId, updated);
+    this.saveToDisk();
     return updated;
   }
 
@@ -2425,6 +2805,7 @@ class MarketplaceStore {
       created_at: new Date().toISOString(),
     };
     this.ledger.push(record);
+    this.saveToDisk();
     return record;
   }
 
@@ -2455,6 +2836,7 @@ class MarketplaceStore {
       created_at: new Date().toISOString(),
     };
     this.reviews.push(r);
+    this.saveToDisk();
     return r;
   }
 
@@ -2466,6 +2848,7 @@ class MarketplaceStore {
       updated_at: new Date().toISOString(),
     };
     this.tickets.push(t);
+    this.saveToDisk();
     return t;
   }
 
@@ -2561,6 +2944,7 @@ class MarketplaceStore {
       updated_at: new Date().toISOString(),
     };
     this.providerProfiles.set(providerId, updated);
+    this.saveToDisk();
     return updated;
   }
 
@@ -2576,6 +2960,7 @@ class MarketplaceStore {
       category: 'settings',
       details: `Updated platform configuration: ${JSON.stringify(newSettings)}`,
     });
+    this.saveToDisk();
     return { ...this.settings };
   }
 
@@ -2586,6 +2971,7 @@ class MarketplaceStore {
       ...entry,
     };
     this.auditLogs.unshift(record);
+    this.saveToDisk();
     return record;
   }
 
@@ -2611,6 +2997,7 @@ class MarketplaceStore {
     if (data.email !== undefined) profile.email = data.email;
     profile.updated_at = new Date().toISOString();
     this.profiles.set(userId, profile);
+    this.saveToDisk();
     return profile;
   }
 
@@ -2629,6 +3016,7 @@ class MarketplaceStore {
       category: 'privacy',
       details: "Customer " + profile.id + " submitted DPDP account erasure request: " + reason,
     });
+    this.saveToDisk();
     return { success: true, message: 'Account deletion request submitted under DPDP Act 2023. Data privacy officer will process your request within 7 business days.' };
   }
 
@@ -2823,6 +3211,7 @@ class MarketplaceStore {
     };
 
     this.availabilityBlocks.set(block.id, block);
+    this.saveToDisk();
 
     this.recordAuditLog({
       operator_email: 'owner@parkbnb.in',
@@ -2842,6 +3231,7 @@ class MarketplaceStore {
       if (!space || space.provider_id !== providerId) return false;
     }
     this.availabilityBlocks.delete(blockId);
+    this.saveToDisk();
     return true;
   }
 

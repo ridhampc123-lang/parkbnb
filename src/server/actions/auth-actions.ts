@@ -11,7 +11,7 @@ import { getLocalStore } from '@/lib/store/marketplace-store';
 import { repository } from '@/lib/db/supabase-repository';
 import { Profile, ProviderProfile, CustomerVehicle, VehicleType } from '@/types/database';
 import { signSessionToken, hashPassword } from '@/lib/auth/session-token';
-import { generateCustomerPublicId } from '@/lib/privacy/customer-privacy';
+import { generateCustomerPublicId, generateOwnerPublicId } from '@/lib/privacy/customer-privacy';
 import { verifyOtpAction } from './otp-actions';
 
 export async function loginAction(formData: FormData) {
@@ -210,6 +210,7 @@ export async function registerAction(formData: FormData) {
   if (role === 'provider') {
     const newProvider: ProviderProfile = {
       id: userId,
+      owner_public_id: generateOwnerPublicId(),
       provider_type: 'individual_residential',
       verification_status: 'draft',
       bank_name: bank_name || null,

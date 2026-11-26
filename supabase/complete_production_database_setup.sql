@@ -137,6 +137,7 @@ WHERE phone IS NOT NULL AND phone_verified = true;
 -- 2. Provider Profiles Table (Host Details & Banking)
 CREATE TABLE IF NOT EXISTS public.provider_profiles (
   id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+  owner_public_id text UNIQUE,
   provider_type provider_type NOT NULL DEFAULT 'individual_residential',
   business_name text,
   pan_number text,
@@ -176,6 +177,8 @@ CREATE TABLE IF NOT EXISTS public.properties (
 -- 4. Parking Spaces Table
 CREATE TABLE IF NOT EXISTS public.parking_spaces (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  space_public_id text UNIQUE,
+  owner_public_id text,
   property_id uuid NOT NULL REFERENCES public.properties(id) ON DELETE CASCADE,
   provider_id uuid NOT NULL REFERENCES public.provider_profiles(id) ON DELETE CASCADE,
   identifier text NOT NULL,
@@ -232,6 +235,8 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   booking_reference text UNIQUE NOT NULL,
   booking_customer_reference text UNIQUE,
   customer_display_name text,
+  owner_public_id text,
+  space_public_id text,
   space_id uuid NOT NULL REFERENCES public.parking_spaces(id),
   customer_id uuid NOT NULL REFERENCES public.profiles(id),
   provider_id uuid NOT NULL REFERENCES public.provider_profiles(id),

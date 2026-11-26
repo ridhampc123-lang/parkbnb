@@ -1,5 +1,6 @@
 'use server';
 
+import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
 import { vehicleSchema } from '@/lib/validation/schemas';
@@ -26,7 +27,7 @@ export async function addVehicleAction(formData: FormData) {
   }
 
   const vehicle: CustomerVehicle = {
-    id: 'veh-' + Math.random().toString(36).substring(2, 9),
+    id: crypto.randomUUID(),
     customer_id: session.user.id,
     vehicle_type: validation.data.vehicle_type,
     registration_number: validation.data.registration_number,

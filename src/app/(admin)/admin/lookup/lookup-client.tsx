@@ -29,7 +29,7 @@ import {
   adminSuspendOwnerAction,
   adminReactivateOwnerAction,
 } from '@/server/actions/admin-actions';
-import { UniversalLookupResult } from '@/lib/store/marketplace-store';
+import type { UniversalLookupResult } from '@/lib/store/marketplace-store';
 import { detectIdentifierType } from '@/lib/privacy/customer-privacy';
 
 export function UniversalLookupClient() {
