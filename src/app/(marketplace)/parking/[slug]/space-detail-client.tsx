@@ -449,10 +449,19 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
 
           {/* Title & Location Header */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-              <MapPin className="w-4 h-4" />
-              <span>{space.property?.area}, Ahmedabad</span>
-              <span className="text-muted-foreground">• {space.property?.postal_code}</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-primary">
+              <div className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                <span>{space.property?.area}, Ahmedabad</span>
+                <span className="text-muted-foreground">• {space.property?.postal_code}</span>
+              </div>
+              <span className="text-muted-foreground">•</span>
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-muted border border-border text-foreground font-bold">
+                ID: {space.space_public_id || space.id}
+              </span>
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200 font-bold">
+                Host ID: {space.owner_public_id || 'PBN-O-VERIFIED'}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">{space.title}</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">{space.description}</p>
@@ -460,14 +469,21 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
 
           {/* Specifications Card */}
           <div className="bg-surface rounded-card p-6 border border-border space-y-4">
-            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Spot Specifications</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Spot Specifications & Immutable IDs</h2>
+              <div className="flex items-center gap-2 font-mono text-[11px]">
+                <span className="text-muted-foreground">Listing ID: <strong className="text-primary">{space.space_public_id || space.id}</strong></span>
+                <span className="text-muted-foreground">•</span>
+                <span className="text-muted-foreground">Host ID: <strong className="text-purple-700">{space.owner_public_id || 'PBN-O-VERIFIED'}</strong></span>
+              </div>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div className="p-3 bg-surface-muted rounded-control space-y-1">
                 <span className="text-muted-foreground block text-[11px]">Parking Type</span>
                 <span className="font-bold text-foreground capitalize">{space.parking_type}</span>
               </div>
               <div className="p-3 bg-surface-muted rounded-control space-y-1">
-                <span className="text-muted-foreground block text-[11px]">Identifier</span>
+                <span className="text-muted-foreground block text-[11px]">Bay Identifier</span>
                 <span className="font-bold text-foreground">{space.identifier}</span>
               </div>
               <div className="p-3 bg-surface-muted rounded-control space-y-1">
@@ -478,6 +494,12 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
                 <span className="text-muted-foreground block text-[11px]">Daily Rate</span>
                 <span className="font-bold text-foreground">₹{space.daily_rate || space.hourly_rate * 8}</span>
               </div>
+            </div>
+            <div className="text-[11px] text-muted-foreground bg-surface-muted p-2.5 rounded-control flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>
+                <strong>Verified Trust Guarantee:</strong> This parking bay is registered under Host ID <code className="font-mono text-purple-700 font-bold">{space.owner_public_id || 'PBN-O-VERIFIED'}</code>. If any discrepancy or fake access occurs, quote this Host ID for immediate investigation and 100% full refund protection.
+              </span>
             </div>
           </div>
 

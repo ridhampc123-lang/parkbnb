@@ -411,11 +411,18 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
             <h1 className="text-xl sm:text-2xl font-black text-foreground mt-2">
               {currentBooking.space?.title || 'Parking Space'}
             </h1>
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1 flex-wrap">
               <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
               <span>
                 {currentBooking.space?.property?.address_line1 || 'Designated Premises'},{' '}
                 {currentBooking.space?.property?.area || 'Ahmedabad'}
+              </span>
+              <span>•</span>
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-muted border border-border text-foreground font-semibold">
+                Space ID: {currentBooking.space_public_id || currentBooking.space?.space_public_id || 'PBN-S-VERIFIED'}
+              </span>
+              <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200 font-semibold">
+                Host ID: {currentBooking.owner_public_id || 'PBN-O-VERIFIED'}
               </span>
             </div>
           </div>
@@ -449,13 +456,22 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
 
         {/* Access Instructions & Directions Box */}
         <div className="bg-primary-soft/50 rounded-card p-5 border border-primary/20 space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4" /> Security Clearance & Entry Instructions
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4" /> Security Clearance & Entry Instructions
+            </h2>
+            <div className="text-[11px] font-mono text-muted-foreground">
+              Verified Host ID: <strong className="text-purple-700">{currentBooking.owner_public_id || 'PBN-O-VERIFIED'}</strong>
+            </div>
+          </div>
           <p className="text-xs text-foreground leading-relaxed">
             {currentBooking.space?.access_instructions ||
               'Show your booking pass to security at the gate. Display your vehicle registration plate for verification.'}
           </p>
+          <div className="text-[10px] text-muted-foreground pt-1 flex items-center gap-1.5">
+            <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
+            <span>If the gate attendant or host denies entry, quote Host ID <strong className="font-mono text-purple-700">{currentBooking.owner_public_id || 'PBN-O-VERIFIED'}</strong> to ParkBnB 24/7 Operations for immediate resolution and 100% refund guarantee.</span>
+          </div>
         </div>
 
         {/* Timings, Privacy Ref & Vehicle Clearance Grid */}

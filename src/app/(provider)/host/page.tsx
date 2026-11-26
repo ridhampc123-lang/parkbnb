@@ -13,6 +13,7 @@ export default async function HostDashboardPage() {
   }
 
   const store = getLocalStore();
+  const provider = store.getProviderProfile(session.user.id);
   const hostSpaces = store.getSpacesByProvider(session.user.id);
   const hostBookings = store.getBookingsByProvider(session.user.id);
 
@@ -22,6 +23,32 @@ export default async function HostDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Permanent Host Identity Header */}
+      <div className="bg-gradient-to-r from-purple-900/10 via-surface to-surface p-4 sm:p-5 rounded-card border border-purple-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-control bg-purple-600/10 text-purple-700 border border-purple-200 shrink-0">
+            <Building className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                Verified Parking Provider
+              </span>
+              <span className="text-xs text-muted-foreground font-mono">
+                Permanent Host ID: <strong className="text-purple-700 font-bold">{provider?.owner_public_id || 'PBN-O-REGISTERED'}</strong>
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              Drivers and gate attendants quote this Host ID to verify your authorized parking locations.
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+          <span>Verification: </span>
+          <span className="font-bold text-emerald-700 capitalize">{provider?.verification_status || 'Approved'}</span>
+        </div>
+      </div>
+
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-surface p-5 rounded-card border border-border shadow-sm space-y-1">
@@ -75,8 +102,13 @@ export default async function HostDashboardPage() {
               {hostSpaces.map(space => (
                 <div key={space.id} className="p-3.5 bg-surface-muted rounded-control flex items-center justify-between text-xs">
                   <div>
-                    <div className="font-bold text-foreground">{space.title}</div>
-                    <div className="text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-foreground">{space.title}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface border border-border text-primary font-bold">
+                        {space.space_public_id || space.id}
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
                       {space.property?.area}, {space.property?.city || 'India'} • Slot {space.identifier} • ₹{space.hourly_rate}/hr
                     </div>
                   </div>
