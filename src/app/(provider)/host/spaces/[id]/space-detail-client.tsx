@@ -20,9 +20,16 @@ import {
   Play,
   Save,
   Check,
-  ArrowLeft
+  ArrowLeft,
+  Navigation,
+  Camera,
+  Upload,
+  Loader2,
+  Star,
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
-import { ParkingSpace, AvailabilityBlock } from '@/types/database';
+import { ParkingSpace, AvailabilityBlock, ParkingSpacePhoto } from '@/types/database';
 import { updateHostSpaceFullAction } from '@/server/actions/host-actions';
 import {
   hostToggleSpaceStatusAction,
@@ -54,6 +61,8 @@ export function HostSpaceDetailClient({
 
   const [title, setTitle] = useState(space.title);
   const [description, setDescription] = useState(space.description || '');
+  const [landmark, setLandmark] = useState(space.landmark || space.property?.landmark || '');
+  const [googleMapsLink, setGoogleMapsLink] = useState(space.google_maps_link || space.property?.google_maps_link || '');
   const [hourlyRate, setHourlyRate] = useState(String(space.hourly_rate));
   const [dailyRate, setDailyRate] = useState(space.daily_rate ? String(space.daily_rate) : '');
   const [monthlyRate, setMonthlyRate] = useState(space.monthly_rate ? String(space.monthly_rate) : '');
@@ -61,6 +70,11 @@ export function HostSpaceDetailClient({
   const [hasEvCharging, setHasEvCharging] = useState(space.has_ev_charging);
   const [heightLimit, setHeightLimit] = useState(space.height_limit_meters ? String(space.height_limit_meters) : '');
   const [parkingType, setParkingType] = useState(space.parking_type);
+
+  // Photos state
+  const [photos, setPhotos] = useState<ParkingSpacePhoto[]>(space.photos || []);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleToggleActive = async () => {
     setIsTogglingStatus(true);
@@ -74,6 +88,63 @@ export function HostSpaceDetailClient({
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
+    setIsUploadingPhoto(true);
+    setUploadError(null);
+
+    try {
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          throw new Error(data.error || 'Failed to upload photo.');
+        }
+        if (data.url) {
+          setPhotos(prev => [
+            ...prev,
+            {
+              id: `p-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+              space_id: space.id,
+              storage_path: data.url,
+              is_primary: prev.length === 0,
+              display_order: prev.length,
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
+      }
+    } catch (err: any) {
+      setUploadError(err.message || 'Image upload failed.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleRemovePhoto = (id: string) => {
+    setPhotos(prev => {
+      const filtered = prev.filter(p => p.id !== id);
+      if (filtered.length > 0 && !filtered.some(p => p.is_primary)) {
+        filtered[0].is_primary = true;
+      }
+      return filtered;
+    });
+  };
+
+  const handleSetPrimaryPhoto = (id: string) => {
+    setPhotos(prev =>
+      prev.map(p => ({
+        ...p,
+        is_primary: p.id === id,
+      }))
+    );
+  };
+
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -83,6 +154,9 @@ export function HostSpaceDetailClient({
     formData.append('space_id', space.id);
     formData.append('title', title);
     formData.append('description', description);
+    formData.append('landmark', landmark);
+    formData.append('google_maps_link', googleMapsLink);
+    formData.append('photos_json', JSON.stringify(photos));
     formData.append('hourly_rate', hourlyRate);
     formData.append('daily_rate', dailyRate);
     formData.append('monthly_rate', monthlyRate);
@@ -260,6 +334,127 @@ export function HostSpaceDetailClient({
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full p-3 rounded-control border border-border bg-surface text-foreground text-xs focus:ring-2 focus:ring-primary/20"
               />
+            </div>
+
+            {/* Landmark & Google Maps Link Section */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 bg-amber-500/10 rounded-control border border-amber-500/30 space-y-1.5">
+                <label className="block text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Nearby Landmark / Visual Location Cue</span>
+                </label>
+                <input
+                  type="text"
+                  value={landmark}
+                  onChange={(e) => setLandmark(e.target.value)}
+                  placeholder="e.g. Opposite Rajpath Club, Behind Iscon Mega Mall"
+                  className="w-full px-3 py-2 rounded-control border border-amber-300 bg-surface text-foreground text-xs font-semibold focus:ring-2 focus:ring-amber-500/20"
+                />
+                <span className="text-[10px] text-muted-foreground block">
+                  Highlighted on driver booking passes for effortless arrival.
+                </span>
+              </div>
+
+              <div className="p-3.5 bg-blue-50/50 rounded-control border border-blue-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Google Maps Link</span>
+                  </label>
+                  {googleMapsLink && (
+                    <a
+                      href={googleMapsLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-semibold text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <span>Test Pin</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  value={googleMapsLink}
+                  onChange={(e) => setGoogleMapsLink(e.target.value)}
+                  placeholder="e.g. https://maps.app.goo.gl/... or https://goo.gl/maps/..."
+                  className="w-full px-3 py-2 rounded-control border border-border bg-surface text-foreground text-xs font-mono"
+                />
+                <span className="text-[10px] text-muted-foreground block">
+                  Enables 1-tap navigation inside Google Maps for drivers.
+                </span>
+              </div>
+            </div>
+
+            {/* Parking Photos Gallery & Upload */}
+            <div className="p-4 bg-surface-muted rounded-control border border-border space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-primary" />
+                    <span>Parking Spot Photos ({photos.length})</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    Upload real photos of your gate, driveway, and parking bay.
+                  </span>
+                </div>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-control text-xs font-bold cursor-pointer transition-colors shadow-xs">
+                  {isUploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  <span>{isUploadingPhoto ? 'Uploading...' : 'Upload Photos'}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    disabled={isUploadingPhoto}
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {uploadError && (
+                <div className="text-xs text-danger font-semibold">{uploadError}</div>
+              )}
+
+              {photos.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                  {photos.map((p, idx) => (
+                    <div
+                      key={p.id || idx}
+                      className={`relative rounded-control overflow-hidden border-2 bg-surface shadow-xs ${
+                        p.is_primary ? 'border-primary' : 'border-border'
+                      }`}
+                    >
+                      <img src={p.storage_path} alt="Parking slot" className="w-full h-24 object-cover" />
+                      {p.is_primary ? (
+                        <span className="absolute top-1 left-1 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                          Cover
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryPhoto(p.id)}
+                          className="absolute top-1 left-1 bg-black/70 hover:bg-primary text-white text-[9px] font-semibold px-1.5 py-0.5 rounded shadow"
+                        >
+                          Make Cover
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(p.id)}
+                        className="absolute top-1 right-1 bg-red-600/90 hover:bg-red-700 text-white p-1 rounded-full shadow"
+                        title="Delete photo"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 bg-surface rounded-control text-center text-xs text-muted-foreground border border-dashed border-border">
+                  No photos uploaded yet. Upload at least one photo so drivers can identify your spot.
+                </div>
+              )}
             </div>
 
             {/* Pricing Section */}

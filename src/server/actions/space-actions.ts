@@ -6,7 +6,8 @@ import { getServerSession } from '@/lib/auth/session';
 import { spaceSchema } from '@/lib/validation/schemas';
 import { repository } from '@/lib/db/supabase-repository';
 import { getLocalStore } from '@/lib/store/marketplace-store';
-import { ParkingSpace, Property, VehicleType } from '@/types/database';
+import { ParkingSpace, Property, VehicleType, ParkingSpacePhoto } from '@/types/database';
+import { parseGoogleMapsUrl, generateGoogleMapsDirectionUrl } from '@/lib/location/pincode-directory';
 
 export async function createSpaceAction(formData: FormData) {
   const session = await getServerSession();
@@ -42,6 +43,35 @@ export async function createSpaceAction(formData: FormData) {
     }
   }
 
+  const landmark = (formData.get('landmark') as string)?.trim() || 'Near Main Entrance Gate';
+  const rawGoogleMapsLink = (formData.get('google_maps_link') as string)?.trim() || '';
+
+  let latitude = Number(formData.get('latitude') || 23.0225);
+  let longitude = Number(formData.get('longitude') || 72.5714);
+  let resolvedGoogleMapsLink = rawGoogleMapsLink;
+
+  if (rawGoogleMapsLink) {
+    const parsedMap = parseGoogleMapsUrl(rawGoogleMapsLink);
+    if (!parsedMap.isValid) {
+      return { error: parsedMap.errorMessage || 'Please provide a valid Google Maps link (e.g. https://maps.app.goo.gl/... or https://goo.gl/maps/...).' };
+    }
+    if (parsedMap.latitude && parsedMap.longitude) {
+      latitude = parsedMap.latitude;
+      longitude = parsedMap.longitude;
+    }
+    resolvedGoogleMapsLink = parsedMap.cleanUrl || rawGoogleMapsLink;
+  } else {
+    resolvedGoogleMapsLink = generateGoogleMapsDirectionUrl({
+      address: (formData.get('address_line1') as string) || '',
+      landmark,
+      area,
+      city,
+      postal_code: (formData.get('postal_code') as string) || '',
+      latitude,
+      longitude,
+    });
+  }
+
   const rawData = {
     title: resolvedTitle,
     property_title: propertyTitle,
@@ -49,9 +79,11 @@ export async function createSpaceAction(formData: FormData) {
     city,
     area,
     address_line1: formData.get('address_line1'),
+    landmark,
+    google_maps_link: resolvedGoogleMapsLink,
     postal_code: formData.get('postal_code'),
-    latitude: Number(formData.get('latitude') || 23.0225),
-    longitude: Number(formData.get('longitude') || 72.5714),
+    latitude,
+    longitude,
     identifier: formData.get('identifier'),
     parking_type: parkingType,
     hourly_rate: Number(formData.get('hourly_rate')),
@@ -102,16 +134,69 @@ export async function createSpaceAction(formData: FormData) {
     title: validation.data.property_title,
     property_type: validation.data.property_type,
     address_line1: validation.data.address_line1,
+    landmark,
     area: validation.data.area,
     city: validation.data.city,
     postal_code: validation.data.postal_code,
     latitude: validation.data.latitude,
     longitude: validation.data.longitude,
+    google_maps_link: resolvedGoogleMapsLink,
     created_at: new Date().toISOString(),
   };
 
-  // 2. Create Parking Space (Strictly pending review until Admin approves)
+  // 2. Resolve Parking Photos (Custom uploaded photos from owner or verified presets)
   const spaceId = crypto.randomUUID();
+  let photos: ParkingSpacePhoto[] = [];
+  const photosJson = formData.get('photos_json') as string | null;
+
+  if (photosJson) {
+    try {
+      const parsed = JSON.parse(photosJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        photos = parsed
+          .map((item: any, idx: number) => ({
+            id: crypto.randomUUID(),
+            space_id: spaceId,
+            storage_path: typeof item === 'string' ? item : item.storage_path || item.url || '',
+            is_primary: idx === 0 || Boolean(item.is_primary),
+            display_order: idx,
+            created_at: new Date().toISOString(),
+          }))
+          .filter((p) => Boolean(p.storage_path));
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  if (photos.length === 0) {
+    const urls = formData.getAll('photo_urls') as string[];
+    if (urls.length > 0) {
+      photos = urls.filter(Boolean).map((u, idx) => ({
+        id: crypto.randomUUID(),
+        space_id: spaceId,
+        storage_path: u,
+        is_primary: idx === 0,
+        display_order: idx,
+        created_at: new Date().toISOString(),
+      }));
+    }
+  }
+
+  if (photos.length === 0) {
+    photos = [
+      {
+        id: crypto.randomUUID(),
+        space_id: spaceId,
+        storage_path: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80',
+        is_primary: true,
+        display_order: 0,
+        created_at: new Date().toISOString(),
+      },
+    ];
+  }
+
+  // 3. Create Parking Space (Strictly pending review until Admin approves)
   const space: ParkingSpace = {
     id: spaceId,
     property_id: propertyId,
@@ -119,6 +204,8 @@ export async function createSpaceAction(formData: FormData) {
     identifier: validation.data.identifier,
     title: validation.data.title,
     description: (formData.get('description') as string) || `Covered and secure parking space in ${validation.data.area}, ${validation.data.city}.`,
+    landmark,
+    google_maps_link: resolvedGoogleMapsLink,
     parking_type: validation.data.parking_type,
     hourly_rate: validation.data.hourly_rate,
     daily_rate: validation.data.daily_rate || null,
@@ -134,16 +221,7 @@ export async function createSpaceAction(formData: FormData) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     property,
-    photos: [
-      {
-        id: 'p-' + Math.random().toString(36).substring(2, 9),
-        space_id: spaceId,
-        storage_path: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80',
-        is_primary: true,
-        display_order: 0,
-        created_at: new Date().toISOString(),
-      }
-    ],
+    photos,
     vehicle_types: validation.data.vehicle_types,
   };
 

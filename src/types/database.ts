@@ -96,6 +96,7 @@ export interface Property {
   postal_code: string;
   latitude: number;
   longitude: number;
+  google_maps_link?: string | null;
   created_at: string;
 }
 
@@ -108,6 +109,8 @@ export interface ParkingSpace {
   identifier: string;
   title: string;
   description?: string | null;
+  google_maps_link?: string | null;
+  landmark?: string | null;
   parking_type: 'covered' | 'open' | 'basement' | 'multi_level';
   hourly_rate: number;
   daily_rate?: number | null;

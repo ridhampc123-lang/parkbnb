@@ -22,8 +22,13 @@ import {
   Receipt,
   FileCheck2,
   ChevronRight,
-  Shield
+  Shield,
+  Navigation,
+  ExternalLink,
+  Sparkles,
+  Camera
 } from 'lucide-react';
+import { generateGoogleMapsDirectionUrl } from '@/lib/location/pincode-directory';
 import { initiateBookingHoldAction, confirmBookingPaymentAction } from '@/server/actions/booking-actions';
 import { completeCustomerOnboardingAction } from '@/server/actions/auth-actions';
 import {
@@ -93,6 +98,22 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
   const [loading, setLoading] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Photo Gallery & Directions
+  const [selectedPhotoIdx, setSelectedPhotoIdx] = useState(0);
+
+  const googleMapsDirectionUrl = useMemo(() => {
+    return generateGoogleMapsDirectionUrl({
+      address: space.property?.address_line1,
+      landmark: space.landmark || space.property?.landmark,
+      area: space.property?.area,
+      city: space.property?.city,
+      postal_code: space.property?.postal_code,
+      latitude: space.property?.latitude,
+      longitude: space.property?.longitude,
+      customUrl: space.google_maps_link || space.property?.google_maps_link,
+    });
+  }, [space]);
 
   // -------------------------------------------------------------
   // 3. Live Price Calculation (Public Preview)
@@ -424,25 +445,57 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
         {/* Left Column (8 cols): Photos, Description, Specifications, Rules */}
         <div className="lg:col-span-8 space-y-6">
           {/* Main Photo Gallery */}
-          <div className="rounded-card overflow-hidden h-72 sm:h-96 bg-surface-muted relative border border-border shadow-sm">
-            {space.photos && space.photos[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={space.photos[0].storage_path}
-                alt={space.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <Car className="w-16 h-16 stroke-1" />
+          <div className="space-y-2">
+            <div className="rounded-card overflow-hidden h-72 sm:h-96 bg-surface-muted relative border border-border shadow-sm">
+              {space.photos && space.photos.length > 0 && space.photos[selectedPhotoIdx] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={space.photos[selectedPhotoIdx].storage_path}
+                  alt={space.title}
+                  className="w-full h-full object-cover transition-all duration-200"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <Car className="w-16 h-16 stroke-1" />
+                </div>
+              )}
+              <div className="absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1.5 rounded-control text-sm font-extrabold text-foreground shadow-sm">
+                ₹{space.hourly_rate} / hour
               </div>
-            )}
-            <div className="absolute top-4 left-4 bg-white/95 backdrop-blur px-3 py-1.5 rounded-control text-sm font-extrabold text-foreground shadow-sm">
-              ₹{space.hourly_rate} / hour
+              {space.has_ev_charging && (
+                <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-control text-xs font-semibold flex items-center gap-1 shadow-sm">
+                  <Zap className="w-3.5 h-3.5" /> EV Charging Ready
+                </div>
+              )}
+              {space.photos && space.photos.length > 1 && (
+                <div className="absolute bottom-3 right-3 bg-black/75 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                  Photo {selectedPhotoIdx + 1} of {space.photos.length}
+                </div>
+              )}
             </div>
-            {space.has_ev_charging && (
-              <div className="absolute top-4 right-4 bg-emerald-600 text-white px-3 py-1 rounded-control text-xs font-semibold flex items-center gap-1 shadow-sm">
-                <Zap className="w-3.5 h-3.5" /> EV Charging Ready
+
+            {/* Thumbnail Strip (if multiple photos) */}
+            {space.photos && space.photos.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto py-1">
+                {space.photos.map((p, idx) => (
+                  <button
+                    key={p.id || idx}
+                    type="button"
+                    onClick={() => setSelectedPhotoIdx(idx)}
+                    className={`relative w-20 h-14 rounded-control overflow-hidden border-2 transition-all shrink-0 ${
+                      selectedPhotoIdx === idx
+                        ? 'border-primary ring-2 ring-primary/30 scale-105 shadow-sm'
+                        : 'border-border opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={p.storage_path} alt="Thumb" className="w-full h-full object-cover" />
+                    {p.is_primary && (
+                      <span className="absolute bottom-0 inset-x-0 bg-primary/90 text-white text-[8px] font-bold text-center">
+                        Cover
+                      </span>
+                    )}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -452,7 +505,7 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-primary">
               <div className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                <span>{space.property?.area}, Ahmedabad</span>
+                <span>{space.property?.area}, {space.property?.city || 'Ahmedabad'}</span>
                 <span className="text-muted-foreground">• {space.property?.postal_code}</span>
               </div>
               <span className="text-muted-foreground">•</span>
@@ -465,6 +518,41 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">{space.title}</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">{space.description}</p>
+          </div>
+
+          {/* Verified Location, Landmark & 1-Tap Google Maps Navigation Card */}
+          <div className="bg-surface rounded-card p-5 border border-border shadow-xs space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-primary" /> Verified Physical Address
+                </div>
+                <div className="text-sm font-bold text-foreground mt-0.5">
+                  {space.property?.address_line1 || 'Designated Premises'}, {space.property?.area},{' '}
+                  {space.property?.city || 'Ahmedabad'} - {space.property?.postal_code}
+                </div>
+              </div>
+
+              <a
+                href={googleMapsDirectionUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-control shadow transition-colors shrink-0"
+              >
+                <Navigation className="w-4 h-4 fill-white" />
+                <span>Open in Google Maps</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            {(space.landmark || space.property?.landmark) && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-control flex items-center gap-2 text-xs">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Nearby Landmark:</strong> {space.landmark || space.property?.landmark}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Specifications Card */}

@@ -76,5 +76,22 @@ DO $$ BEGIN
     FOR SELECT USING (true);
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
--- 7. Reload Supabase Schema Cache
+-- 7. Landmark and Google Maps Navigation Links for Properties and Parking Spaces
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS landmark text;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS google_maps_link text;
+ALTER TABLE parking_spaces ADD COLUMN IF NOT EXISTS google_maps_link text;
+ALTER TABLE parking_spaces ADD COLUMN IF NOT EXISTS landmark text;
+
+-- 8. Ensure Parking Photos Storage Bucket Exists (idempotent)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('parking-photos', 'parking-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DO $$ BEGIN
+  CREATE POLICY "Public parking photos viewable by everyone"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'parking-photos');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+-- 9. Reload Supabase Schema Cache
 NOTIFY pgrst, 'reload schema';

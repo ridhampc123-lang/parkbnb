@@ -33,6 +33,7 @@ import {
   customerCheckInAction,
   customerCheckOutAction
 } from '@/server/actions/booking-actions';
+import { generateGoogleMapsDirectionUrl } from '@/lib/location/pincode-directory';
 import { submitReviewAction } from '@/server/actions/review-actions';
 import { Booking } from '@/types/database';
 
@@ -425,9 +426,30 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
                 Host ID: {currentBooking.owner_public_id || 'PBN-O-VERIFIED'}
               </span>
             </div>
+
+            {/* Landmark Visual Cue Badge */}
+            {(currentBooking.space?.landmark || currentBooking.space?.property?.landmark) && (
+              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded bg-amber-500/10 border border-amber-500/20 text-amber-900 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Nearby Landmark:</strong> {currentBooking.space?.landmark || currentBooking.space?.property?.landmark}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Space Photo Thumbnail (if uploaded) */}
+            {currentBooking.space?.photos && currentBooking.space.photos[0] && (
+              <div className="hidden sm:block w-16 h-16 rounded-control overflow-hidden border border-border shrink-0 shadow-xs">
+                <img
+                  src={currentBooking.space.photos[0].storage_path}
+                  alt="Spot"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
             <div className="bg-surface-muted p-4 rounded-control text-center shrink-0 border border-border flex-1 sm:flex-initial">
               <div className="text-[10px] uppercase font-bold text-muted-foreground">Assigned Slot</div>
               <div className="text-xl font-black text-primary font-mono">
@@ -440,9 +462,16 @@ export function BookingDetailClient({ booking }: { booking: Booking }) {
 
             {/* Direct Google Maps Navigation Button */}
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                `${currentBooking.space?.property?.latitude && currentBooking.space?.property?.longitude ? `${currentBooking.space.property.latitude},${currentBooking.space.property.longitude}` : `${currentBooking.space?.property?.address_line1 || ''}, ${currentBooking.space?.property?.area || ''}, ${currentBooking.space?.property?.city || 'India'}`}`
-              )}`}
+              href={generateGoogleMapsDirectionUrl({
+                address: currentBooking.space?.property?.address_line1,
+                landmark: currentBooking.space?.landmark || currentBooking.space?.property?.landmark,
+                area: currentBooking.space?.property?.area,
+                city: currentBooking.space?.property?.city,
+                postal_code: currentBooking.space?.property?.postal_code,
+                latitude: currentBooking.space?.property?.latitude,
+                longitude: currentBooking.space?.property?.longitude,
+                customUrl: currentBooking.space?.google_maps_link || currentBooking.space?.property?.google_maps_link,
+              })}
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-control shadow transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 shrink-0 min-h-[44px]"

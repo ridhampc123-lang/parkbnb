@@ -447,7 +447,7 @@ export class SupabaseRepository {
 
         // 2. Ensure property exists in Supabase PostgreSQL
         if (normalizedSpace.property) {
-          const { error: propErr } = await supabase.from('properties').upsert({
+          const propPayload: Record<string, unknown> = {
             id: validPropertyId,
             provider_id: validProviderId,
             title: normalizedSpace.property.title || 'Parking Property',
@@ -455,12 +455,22 @@ export class SupabaseRepository {
             address_line1: normalizedSpace.property.address_line1 || 'Near Main Road',
             address_line2: normalizedSpace.property.address_line2 || null,
             landmark: normalizedSpace.property.landmark || null,
+            google_maps_link: normalizedSpace.property.google_maps_link || null,
             area: normalizedSpace.property.area || 'Ahmedabad Central',
             city: normalizedSpace.property.city || 'Ahmedabad',
             postal_code: normalizedSpace.property.postal_code || '380009',
             latitude: Number(normalizedSpace.property.latitude || 23.0225),
             longitude: Number(normalizedSpace.property.longitude || 72.5714),
-          });
+          };
+
+          let { error: propErr } = await supabase.from('properties').upsert(propPayload);
+          if (propErr && propErr.code === 'PGRST204') {
+            // Self-healing: if google_maps_link or landmark unmigrated in schema cache, strip and retry
+            delete propPayload.google_maps_link;
+            delete propPayload.landmark;
+            const retry = await supabase.from('properties').upsert(propPayload);
+            propErr = retry.error;
+          }
           if (propErr) {
             console.warn('[Repository] property upsert notice:', propErr.message);
           }
@@ -474,6 +484,8 @@ export class SupabaseRepository {
           identifier: normalizedSpace.identifier,
           title: normalizedSpace.title,
           description: normalizedSpace.description || null,
+          google_maps_link: normalizedSpace.google_maps_link || null,
+          landmark: normalizedSpace.landmark || null,
           parking_type: normalizedSpace.parking_type || 'covered',
           hourly_rate: Number(normalizedSpace.hourly_rate || 50),
           daily_rate: normalizedSpace.daily_rate ? Number(normalizedSpace.daily_rate) : null,
@@ -488,11 +500,24 @@ export class SupabaseRepository {
           is_active: normalizedSpace.is_active ?? false,
         };
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('parking_spaces')
           .upsert(spacePayload)
           .select()
           .single();
+
+        if (error && error.code === 'PGRST204') {
+          // Self-healing: strip unmigrated columns and retry
+          delete spacePayload.google_maps_link;
+          delete spacePayload.landmark;
+          const retry = await supabase
+            .from('parking_spaces')
+            .upsert(spacePayload)
+            .select()
+            .single();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           console.warn('[Repository] createParkingSpace error:', error.message);

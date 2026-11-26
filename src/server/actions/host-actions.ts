@@ -486,9 +486,34 @@ export async function updateHostSpaceFullAction(formData: FormData) {
     return { error: 'Hourly rate must be greater than ₹0.' };
   }
 
-  const updated = store.updateSpace(spaceId, {
+  const landmark = (formData.get('landmark') as string)?.trim() || space.landmark;
+  const rawGoogleMapsLink = (formData.get('google_maps_link') as string)?.trim();
+  const google_maps_link = rawGoogleMapsLink !== undefined ? (rawGoogleMapsLink || null) : space.google_maps_link;
+
+  let photos = space.photos;
+  const photosJson = formData.get('photos_json') as string | null;
+  if (photosJson) {
+    try {
+      const parsed = JSON.parse(photosJson);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        photos = parsed.map((item: any, idx: number) => ({
+          id: item.id || `p-${Math.random().toString(36).substring(2, 9)}`,
+          space_id: spaceId,
+          storage_path: typeof item === 'string' ? item : item.storage_path || item.url || '',
+          is_primary: idx === 0 || Boolean(item.is_primary),
+          display_order: idx,
+          created_at: new Date().toISOString(),
+        })).filter(p => Boolean(p.storage_path));
+      }
+    } catch {}
+  }
+
+  const updatedPayload = {
     title: title || space.title,
     description: description !== undefined ? description : space.description,
+    landmark,
+    google_maps_link,
+    photos,
     hourly_rate,
     daily_rate,
     monthly_rate,
@@ -498,7 +523,10 @@ export async function updateHostSpaceFullAction(formData: FormData) {
     parking_type,
     vehicle_types: vehicleTypes.length > 0 ? vehicleTypes : space.vehicle_types,
     security_features: securityFeatures.length > 0 ? securityFeatures : space.security_features,
-  });
+  };
+
+  const updated = store.updateSpace(spaceId, updatedPayload);
+  await repository.updateParkingSpace(spaceId, updatedPayload);
 
   store.recordAuditLog({
     operator_email: session.profile?.email || 'host',
