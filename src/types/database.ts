@@ -63,6 +63,7 @@ export interface Profile {
 
 export interface ProviderProfile {
   id: string;
+  owner_public_id?: string | null; // e.g. PBN-O-7K9X4M2Q
   provider_type: ProviderType;
   business_name?: string | null;
   pan_number?: string | null;
@@ -100,8 +101,10 @@ export interface Property {
 
 export interface ParkingSpace {
   id: string;
+  space_public_id?: string | null; // e.g. PBN-S-3T7W5R9Y
   property_id: string;
   provider_id: string;
+  owner_public_id?: string | null; // e.g. PBN-O-7K9X4M2Q
   identifier: string;
   title: string;
   description?: string | null;
@@ -160,6 +163,8 @@ export interface Booking {
   booking_reference: string;
   booking_customer_reference?: string; // e.g. PBN-REF-8M2Q4K9X
   customer_display_name?: string; // e.g. "Rahul S." (Masked for privacy)
+  owner_public_id?: string | null; // e.g. PBN-O-7K9X4M2Q
+  space_public_id?: string | null; // e.g. PBN-S-3T7W5R9Y
   space_id: string;
   customer_id: string;
   provider_id: string;
@@ -268,6 +273,7 @@ export interface SupportTicket {
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
   internal_notes?: string | null;
   assigned_to?: string | null;
+  messages?: any[];
   created_at: string;
   updated_at: string;
 }

@@ -19,7 +19,8 @@ import {
   LogOut,
   Menu,
   X,
-  Database
+  Database,
+  Search
 } from 'lucide-react';
 import { logoutAction } from '@/server/actions/auth-actions';
 
@@ -60,6 +61,7 @@ export function AdminSidebar({
   ];
 
   const directoryNav = [
+    { href: '/admin/lookup', label: 'Universal ID Lookup', icon: Search },
     { href: '/admin/users', label: 'Drivers & Customers', icon: Users },
     { href: '/admin/hosts', label: 'Parking Owners & Hosts', icon: Building2 },
   ];

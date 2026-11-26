@@ -8,6 +8,7 @@ import { getServerSession } from '@/lib/auth/session';
 import { loginSchema, registerSchema } from '@/lib/validation/schemas';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
 import { Profile, ProviderProfile, CustomerVehicle, VehicleType } from '@/types/database';
 import { signSessionToken, hashPassword } from '@/lib/auth/session-token';
 import { generateCustomerPublicId } from '@/lib/privacy/customer-privacy';
@@ -204,7 +205,7 @@ export async function registerAction(formData: FormData) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  store.createProfile(newProfile);
+  await repository.upsertProfile(newProfile);
 
   if (role === 'provider') {
     const newProvider: ProviderProfile = {
@@ -220,7 +221,7 @@ export async function registerAction(formData: FormData) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    store.saveProviderProfile(newProvider);
+    await repository.upsertProviderProfile(newProvider);
   }
 
   // 5. Issue persistent 30-day session token cookie
@@ -388,7 +389,7 @@ export async function setAccountPasswordWithOtpAction(params: {
 
   // Ensure profile email is updated if new email was provided
   if (email && otpRes.profile.email !== targetEmail) {
-    store.updateProfile(otpRes.profile.id, { email: targetEmail });
+    await repository.updateProfile(otpRes.profile.id, { email: targetEmail });
   }
 
   store.recordAuditLog({
@@ -437,7 +438,7 @@ export async function completeCustomerOnboardingAction(params: {
   if (email && email.trim()) {
     updates.email = email.trim().toLowerCase();
   }
-  store.updateProfile(session.user.id, updates);
+  await repository.updateProfile(session.user.id, updates);
 
   // 2. If password provided, save credentials for email sign-in
   if (password && password.length >= 6) {
@@ -466,8 +467,8 @@ export async function completeCustomerOnboardingAction(params: {
 
   // 3. Save vehicle into customer smart memory
   const cleanPlate = vehiclePlate.trim().toUpperCase();
-  const existingVehicles = store.getVehiclesByCustomer(session.user.id);
-  const vehicleId = 'veh-' + Math.random().toString(36).substring(2, 9);
+  const existingVehicles = await repository.getVehiclesByCustomer(session.user.id);
+  const vehicleId = crypto.randomUUID();
   const newVehicle: CustomerVehicle = {
     id: vehicleId,
     customer_id: session.user.id,
@@ -476,7 +477,7 @@ export async function completeCustomerOnboardingAction(params: {
     is_default: existingVehicles.length === 0,
     created_at: new Date().toISOString(),
   };
-  store.createVehicle(newVehicle);
+  await repository.createVehicle(newVehicle);
 
   return { success: true, vehicle: newVehicle };
 }

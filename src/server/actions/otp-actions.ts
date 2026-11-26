@@ -3,6 +3,7 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { getServerSession } from '@/lib/auth/session';
 import { signSessionToken, hashOtp, verifyOtpHash } from '@/lib/auth/session-token';
@@ -28,7 +29,7 @@ export async function checkMobileIdentityAction(phone: string) {
 
   const cleanPhone = cleanPhoneNumber(phone);
   const store = getLocalStore();
-  const profile = store.getProfileByPhone(cleanPhone);
+  const profile = (await repository.getProfileByPhone(cleanPhone)) || store.getProfileByPhone(cleanPhone);
 
   if (profile) {
     return {
@@ -183,7 +184,7 @@ export async function verifyOtpAction(params: {
   store.markOtpVerified(cleanPhone);
 
   // 4. Customer Profile Resolution / Creation
-  let profile = store.getProfileByPhone(cleanPhone);
+  let profile = (await repository.getProfileByPhone(cleanPhone)) || store.getProfileByPhone(cleanPhone);
   let isNewCustomer = false;
 
   if (!profile) {
@@ -209,8 +210,7 @@ export async function verifyOtpAction(params: {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    store.createProfile(newProfile);
-    profile = newProfile;
+    profile = await repository.upsertProfile(newProfile);
 
     store.recordAuditLog({
       operator_email: 'system-auth',
@@ -233,7 +233,7 @@ export async function verifyOtpAction(params: {
     if (customerDetails?.email?.trim() && !profile.email) {
       updates.email = customerDetails.email.trim();
     }
-    const updated = store.updateProfile(profile.id, updates);
+    const updated = await repository.updateProfile(profile.id, updates);
     if (updated) {
       profile = updated;
     }

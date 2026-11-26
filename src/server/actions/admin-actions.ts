@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/auth/session';
-import { getLocalStore } from '@/lib/store/marketplace-store';
+import { getLocalStore, UniversalLookupResult } from '@/lib/store/marketplace-store';
 import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { VerificationStatus, PlatformSettings, UserRole } from '@/types/database';
 import { hasPermission, isStaffRole } from '@/lib/auth/rbac';
@@ -731,4 +731,93 @@ export async function removeListingTitleOptionAction(title: string) {
   revalidatePath('/admin/listings');
 
   return { success: true, options: updated };
+}
+
+// -------------------------------------------------------------
+// UNIVERSAL FORENSIC ID LOOKUP & EMERGENCY ENFORCEMENT ACTIONS
+// -------------------------------------------------------------
+export async function universalLookupAction(query: string): Promise<{
+  success?: boolean;
+  error?: string;
+  result?: UniversalLookupResult;
+}> {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || !isStaffRole(session.role)) {
+    return { error: 'Forbidden: Platform staff authorization required for forensic universal lookup.' };
+  }
+
+  const clean = query?.trim();
+  if (!clean) {
+    return { error: 'Please enter a valid unique ID, booking reference, or vehicle registration plate.' };
+  }
+
+  const store = getLocalStore();
+  const result = store.universalLookup(clean, {
+    staffId: session.user?.id || 'admin',
+    staffEmail: session.profile?.email || 'admin@parkbnb.in',
+    staffRole: session.role,
+  });
+
+  return { success: true, result };
+}
+
+export async function adminSuspendOwnerAction(params: {
+  providerId: string;
+  reason: string;
+}): Promise<{ success?: boolean; error?: string; deactivatedSpacesCount?: number }> {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || !isStaffRole(session.role)) {
+    return { error: 'Forbidden: Platform staff authorization required to suspend parking owners.' };
+  }
+
+  const reason = params.reason?.trim();
+  if (!reason || reason.length < 5) {
+    return { error: 'Please provide a comprehensive enforcement reason (minimum 5 characters).' };
+  }
+
+  const store = getLocalStore();
+  const result = store.adminSuspendOwner(
+    params.providerId,
+    reason,
+    session.profile?.email || 'admin@parkbnb.in'
+  );
+
+  if (!result.success) {
+    return { error: result.error || 'Failed to suspend parking provider' };
+  }
+
+  revalidatePath('/admin/lookup');
+  revalidatePath('/admin/hosts');
+  revalidatePath('/admin/listings');
+  revalidatePath('/parking');
+  revalidatePath('/search');
+
+  return { success: true, deactivatedSpacesCount: result.deactivatedSpacesCount };
+}
+
+export async function adminReactivateOwnerAction(params: {
+  providerId: string;
+}): Promise<{ success?: boolean; error?: string }> {
+  const session = await getServerSession();
+  if (!session.isAuthenticated || !isStaffRole(session.role)) {
+    return { error: 'Forbidden: Platform staff authorization required to reactivate parking owners.' };
+  }
+
+  const store = getLocalStore();
+  const result = store.adminReactivateOwner(
+    params.providerId,
+    session.profile?.email || 'admin@parkbnb.in'
+  );
+
+  if (!result.success) {
+    return { error: result.error || 'Failed to reactivate parking provider' };
+  }
+
+  revalidatePath('/admin/lookup');
+  revalidatePath('/admin/hosts');
+  revalidatePath('/admin/listings');
+  revalidatePath('/parking');
+  revalidatePath('/search');
+
+  return { success: true };
 }

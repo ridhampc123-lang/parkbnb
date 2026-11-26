@@ -1,5 +1,6 @@
 'use server';
 
+import crypto from 'crypto';
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
 import { spaceSchema } from '@/lib/validation/schemas';
@@ -80,34 +81,21 @@ export async function createSpaceAction(formData: FormData) {
 
   if (bank_account_number || bank_ifsc_code || upi_id) {
     const existingProvider = store.getProviderProfile(session.user.id);
-    if (existingProvider) {
-      store.updateProviderPayoutDetails(session.user.id, {
-        bank_name: bank_name || existingProvider.bank_name,
-        bank_account_holder: bank_account_holder || existingProvider.bank_account_holder || session.profile?.full_name,
-        bank_account_number: bank_account_number || existingProvider.bank_account_number,
-        bank_ifsc_code: bank_ifsc_code || existingProvider.bank_ifsc_code,
-        upi_id: upi_id || existingProvider.upi_id,
-        payout_preference: payout_preference || existingProvider.payout_preference,
-      });
-    } else {
-      store.saveProviderProfile({
-        id: session.user.id,
-        provider_type: 'individual_residential',
-        verification_status: 'draft',
-        bank_name: bank_name || null,
-        bank_account_holder: bank_account_holder || session.profile?.full_name || null,
-        bank_account_number: bank_account_number || null,
-        bank_ifsc_code: bank_ifsc_code || null,
-        upi_id: upi_id || null,
-        payout_preference,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    }
+    await repository.upsertProviderProfile({
+      id: session.user.id,
+      provider_type: 'individual_residential',
+      verification_status: existingProvider?.verification_status || 'draft',
+      bank_name: bank_name || existingProvider?.bank_name || null,
+      bank_account_holder: bank_account_holder || existingProvider?.bank_account_holder || session.profile?.full_name || null,
+      bank_account_number: bank_account_number || existingProvider?.bank_account_number || null,
+      bank_ifsc_code: bank_ifsc_code || existingProvider?.bank_ifsc_code || null,
+      upi_id: upi_id || existingProvider?.upi_id || null,
+      payout_preference: payout_preference || existingProvider?.payout_preference || 'bank_transfer',
+    });
   }
 
   // 1. Create Property Record
-  const propertyId = 'prop-' + Math.random().toString(36).substring(2, 9);
+  const propertyId = crypto.randomUUID();
   const property: Property = {
     id: propertyId,
     provider_id: session.user.id,
@@ -121,10 +109,9 @@ export async function createSpaceAction(formData: FormData) {
     longitude: validation.data.longitude,
     created_at: new Date().toISOString(),
   };
-  store.createProperty(property);
 
   // 2. Create Parking Space (Strictly pending review until Admin approves)
-  const spaceId = 'spc-' + Math.random().toString(36).substring(2, 9);
+  const spaceId = crypto.randomUUID();
   const space: ParkingSpace = {
     id: spaceId,
     property_id: propertyId,
@@ -186,13 +173,12 @@ export async function getPublicApprovedSpacesAction(): Promise<ParkingSpace[]> {
 }
 
 export async function getPendingSpacesAction(): Promise<ParkingSpace[]> {
-  const store = getLocalStore();
-  return store.getAllSpaces().filter(s => s.status === 'submitted');
+  const spaces = await repository.getAllSpaces();
+  return spaces.filter(s => s.status === 'submitted');
 }
 
 export async function getAllSpacesAction(): Promise<ParkingSpace[]> {
-  const store = getLocalStore();
-  return store.getAllSpaces();
+  return repository.getAllSpaces();
 }
 
 export async function getSpaceByIdAction(id: string): Promise<ParkingSpace | undefined> {

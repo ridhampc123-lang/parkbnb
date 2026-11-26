@@ -18,6 +18,53 @@ export function generateCustomerPublicId(): string {
 }
 
 /**
+ * Generates permanent unpredictable Owner / Parking Provider Public ID
+ * Example: PBN-O-8K2M9P4X
+ */
+export function generateOwnerPublicId(): string {
+  const bytes = crypto.randomBytes(8);
+  let result = 'PBN-O-';
+  for (let i = 0; i < 8; i++) {
+    result += ID_CHARSET[bytes[i] % ID_CHARSET.length];
+  }
+  return result;
+}
+
+/**
+ * Generates permanent unpredictable Parking Space / Listing Public ID
+ * Example: PBN-S-3T7W5R9Y
+ */
+export function generateSpacePublicId(): string {
+  const bytes = crypto.randomBytes(8);
+  let result = 'PBN-S-';
+  for (let i = 0; i < 8; i++) {
+    result += ID_CHARSET[bytes[i] % ID_CHARSET.length];
+  }
+  return result;
+}
+
+/**
+ * Auto-detects identifier type from string prefix / format
+ */
+export function detectIdentifierType(identifier: string): 'owner' | 'customer' | 'space' | 'booking' | 'vehicle' | 'unknown' {
+  if (!identifier) return 'unknown';
+  const clean = identifier.trim().toUpperCase();
+
+  if (clean.startsWith('PBN-O-')) return 'owner';
+  if (clean.startsWith('PBN-C-')) return 'customer';
+  if (clean.startsWith('PBN-S-')) return 'space';
+  if (clean.startsWith('PKB-') || clean.startsWith('PBN-REF-') || clean.startsWith('BPR-')) return 'booking';
+  
+  // Indian vehicle registration number format (e.g. GJ01AB1234 or GJ 01 AB 1234)
+  const plateClean = clean.replace(/[\s-]/g, '');
+  if (/^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{4}$/.test(plateClean)) {
+    return 'vehicle';
+  }
+
+  return 'unknown';
+}
+
+/**
  * Generates unique booking-specific customer reference
  * Example: PBN-REF-8M2Q4K9X
  */

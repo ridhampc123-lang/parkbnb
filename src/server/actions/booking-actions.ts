@@ -57,7 +57,7 @@ export async function initiateBookingHoldAction(params: {
       // Create and save vehicle into customer memory
       const customerVehicles = await repository.getVehiclesByCustomer(session.user.id);
       resolvedVehicle = {
-        id: 'veh-' + Math.random().toString(36).substring(2, 9),
+        id: crypto.randomUUID(),
         customer_id: session.user.id,
         vehicle_type: vehicleType || 'car_sedan',
         registration_number: cleanPlate,
@@ -82,7 +82,7 @@ export async function initiateBookingHoldAction(params: {
   const pricing = repository.calculatePricing(space, startTime, endTime);
 
   // Create temporary booking in hold_pending status
-  const bookingId = 'bkg-' + Math.random().toString(36).substring(2, 9);
+  const bookingId = crypto.randomUUID();
   const bookingRef =
     'PKB-' +
     new Date().toISOString().slice(0, 10).replace(/-/g, '') +

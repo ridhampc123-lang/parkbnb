@@ -24,6 +24,9 @@ import {
 } from '@/types/database';
 import {
   generateCustomerPublicId,
+  generateOwnerPublicId,
+  generateSpacePublicId,
+  detectIdentifierType,
   generateBookingCustomerReference,
   maskCustomerDisplayName,
   maskPhoneNumber,
@@ -51,6 +54,57 @@ export interface OtpVerification {
   expires_at: string;
   verified_at?: string;
   created_at: string;
+}
+
+export type UniversalIdentifierType = 'owner' | 'customer' | 'space' | 'booking' | 'vehicle' | 'unknown' | 'not_found';
+
+export interface UniversalLookupResult {
+  query: string;
+  detectedType: UniversalIdentifierType;
+  found: boolean;
+  timestamp: string;
+
+  ownerData?: {
+    provider: ProviderProfile;
+    profile?: Profile;
+    spaces: ParkingSpace[];
+    totalBookings: number;
+    totalEarnings: number;
+    disputesCount: number;
+    flags: string[];
+  };
+
+  customerData?: {
+    profile: Profile;
+    vehicles: CustomerVehicle[];
+    totalBookings: number;
+    totalSpent: number;
+    bookings: Booking[];
+  };
+
+  spaceData?: {
+    space: ParkingSpace;
+    owner?: ProviderProfile;
+    ownerProfile?: Profile;
+    property?: Property;
+    totalBookings: number;
+    activeBookings: number;
+  };
+
+  bookingData?: {
+    booking: Booking;
+    space?: ParkingSpace;
+    owner?: ProviderProfile;
+    customerProfile?: Profile;
+  };
+
+  vehicleData?: {
+    vehicle?: CustomerVehicle;
+    plateNumber: string;
+    customerProfile?: Profile;
+    bookingsCount: number;
+    bookings: Booking[];
+  };
 }
 
 /**
@@ -165,6 +219,7 @@ class MarketplaceStore {
 
     const provider1: ProviderProfile = {
       id: host1Id,
+      owner_public_id: 'PBN-O-HST001',
       provider_type: 'individual_residential',
       business_name: 'Shivalik Heights Parking Allotment',
       verification_status: 'approved',
@@ -201,6 +256,8 @@ class MarketplaceStore {
     const space1Id = 'spc-prahladnagar-01';
     const space1: ParkingSpace = {
       id: space1Id,
+      space_public_id: 'PBN-S-AHM001',
+      owner_public_id: 'PBN-O-HST001',
       property_id: prop1Id,
       provider_id: host1Id,
       identifier: 'Basement Slot B-22',
@@ -253,6 +310,7 @@ class MarketplaceStore {
 
     const provider2: ProviderProfile = {
       id: host2Id,
+      owner_public_id: 'PBN-O-HST002',
       provider_type: 'commercial_operator',
       business_name: 'Times Square Commercial Precinct LLP',
       pan_number: 'AABCT1234E',
@@ -290,6 +348,8 @@ class MarketplaceStore {
     const space2Id = 'spc-sbr-02';
     const space2: ParkingSpace = {
       id: space2Id,
+      space_public_id: 'PBN-S-AHM002',
+      owner_public_id: 'PBN-O-HST002',
       property_id: prop2Id,
       provider_id: host2Id,
       identifier: 'Surface Bay EV-04',
@@ -345,6 +405,7 @@ class MarketplaceStore {
 
     const provider3: ProviderProfile = {
       id: host3Id,
+      owner_public_id: 'PBN-O-MUM001',
       provider_type: 'commercial_operator',
       business_name: 'BKC Financial Center Parking Towers',
       pan_number: 'AAACS9876K',
@@ -382,6 +443,8 @@ class MarketplaceStore {
     const space3Id = 'spc-mumbai-bkc-01';
     const space3: ParkingSpace = {
       id: space3Id,
+      space_public_id: 'PBN-S-MUM001',
+      owner_public_id: 'PBN-O-MUM001',
       property_id: prop3Id,
       provider_id: host3Id,
       identifier: 'Podium Bay P2-18',
@@ -434,6 +497,7 @@ class MarketplaceStore {
 
     const provider4: ProviderProfile = {
       id: host4Id,
+      owner_public_id: 'PBN-O-DEL001',
       provider_type: 'commercial_operator',
       business_name: 'Cyber City Mobility Services',
       pan_number: 'AABCM6543R',
@@ -471,6 +535,8 @@ class MarketplaceStore {
     const space4Id = 'spc-delhi-cybercity-01';
     const space4: ParkingSpace = {
       id: space4Id,
+      space_public_id: 'PBN-S-DEL001',
+      owner_public_id: 'PBN-O-DEL001',
       property_id: prop4Id,
       provider_id: host4Id,
       identifier: 'Basement 1, Spot 42',
@@ -523,6 +589,7 @@ class MarketplaceStore {
 
     const provider5: ProviderProfile = {
       id: host5Id,
+      owner_public_id: 'PBN-O-BLR001',
       provider_type: 'individual_residential',
       business_name: 'Koramangala Gated Stilt Parking',
       verification_status: 'approved',
@@ -558,6 +625,8 @@ class MarketplaceStore {
     const space5Id = 'spc-blr-kora-01';
     const space5: ParkingSpace = {
       id: space5Id,
+      space_public_id: 'PBN-S-BLR001',
+      owner_public_id: 'PBN-O-BLR001',
       property_id: prop5Id,
       provider_id: host5Id,
       identifier: 'Stilt Slot S-08',
@@ -610,6 +679,7 @@ class MarketplaceStore {
 
     const provider6: ProviderProfile = {
       id: host6Id,
+      owner_public_id: 'PBN-O-PUN001',
       provider_type: 'commercial_operator',
       business_name: 'Hinjewadi Tech Corridor Parking',
       verification_status: 'approved',
@@ -645,6 +715,8 @@ class MarketplaceStore {
     const space6Id = 'spc-pune-hinj-01';
     const space6: ParkingSpace = {
       id: space6Id,
+      space_public_id: 'PBN-S-PUN001',
+      owner_public_id: 'PBN-O-PUN001',
       property_id: prop6Id,
       provider_id: host6Id,
       identifier: 'Bay IT-14',
@@ -697,6 +769,7 @@ class MarketplaceStore {
 
     const provider7: ProviderProfile = {
       id: host7Id,
+      owner_public_id: 'PBN-O-HYD001',
       provider_type: 'commercial_operator',
       business_name: 'HITEC City Smart Park Services',
       verification_status: 'approved',
@@ -732,6 +805,8 @@ class MarketplaceStore {
     const space7Id = 'spc-hyd-hitec-01';
     const space7: ParkingSpace = {
       id: space7Id,
+      space_public_id: 'PBN-S-HYD001',
+      owner_public_id: 'PBN-O-HYD001',
       property_id: prop7Id,
       provider_id: host7Id,
       identifier: 'Multi-Level P3-11',
@@ -1059,6 +1134,257 @@ class MarketplaceStore {
   public getCustomerDataAccessLogs(): CustomerDataAccessLog[] {
     return [...this.customerDataAccessLogs];
   }
+
+  // =============================================================
+  // UNIVERSAL FORENSIC IDENTIFIER LOOKUP ENGINE
+  // (Owners, Customers, Parking Spaces, Bookings, Vehicles)
+  // =============================================================
+  public universalLookup(
+    query: string,
+    staffContext?: { staffId?: string; staffEmail?: string; staffRole?: UserRole }
+  ): UniversalLookupResult {
+    const rawTerm = (query || '').trim();
+    const cleanTerm = rawTerm.toUpperCase();
+    const cleanAlphaNum = rawTerm.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const detectedType = detectIdentifierType(rawTerm);
+    const timestamp = new Date().toISOString();
+
+    if (!rawTerm) {
+      return {
+        query: '',
+        detectedType: 'not_found',
+        found: false,
+        timestamp,
+      };
+    }
+
+    // 1. Try Owner Search (PBN-O- or ID or Provider business name or matching profile)
+    let foundProvider = Array.from(this.providerProfiles.values()).find(
+      p => (p.owner_public_id && p.owner_public_id.toUpperCase() === cleanTerm) ||
+           p.id.toUpperCase() === cleanTerm
+    );
+
+    if (!foundProvider && !cleanTerm.startsWith('PBN-C-') && !cleanTerm.startsWith('PBN-S-') && !cleanTerm.startsWith('PKB-') && !cleanTerm.startsWith('PBN-REF-')) {
+      const matchedProfile = Array.from(this.profiles.values()).find(
+        p => p.role === 'provider' && (
+          p.id.toUpperCase() === cleanTerm ||
+          (p.customer_public_id && p.customer_public_id.toUpperCase() === cleanTerm) ||
+          (p.email && p.email.toLowerCase() === rawTerm.toLowerCase()) ||
+          (p.phone && p.phone.replace(/\D/g, '') === cleanAlphaNum && cleanAlphaNum.length >= 10)
+        )
+      );
+      if (matchedProfile) {
+        foundProvider = this.providerProfiles.get(matchedProfile.id);
+      }
+    }
+
+    if (foundProvider) {
+      const profile = this.profiles.get(foundProvider.id);
+      const hostSpaces = Array.from(this.spaces.values()).filter(s => s.provider_id === foundProvider!.id);
+      const hostBookings = Array.from(this.bookings.values()).filter(b => b.provider_id === foundProvider!.id);
+      const completed = hostBookings.filter(b => b.status === 'completed' || b.status === 'confirmed' || b.status === 'active');
+      const totalEarnings = completed.reduce((sum, b) => sum + b.provider_payout_amount, 0);
+      const disputesCount = this.tickets.filter(t => t.user_id === foundProvider!.id).length;
+
+      const flags: string[] = [];
+      if (foundProvider.verification_status === 'rejected') flags.push('SUSPENDED_BY_ADMIN');
+      if (foundProvider.verification_status === 'submitted' || foundProvider.verification_status === 'under_review') flags.push('VERIFICATION_PENDING');
+      if (hostSpaces.some(s => !s.is_active || s.status === 'rejected')) flags.push('CONTAINS_DELISTED_SPACES');
+      if (disputesCount > 0) flags.push(`ACTIVE_DISPUTES_${disputesCount}`);
+
+      if (staffContext?.staffEmail) {
+        this.recordAuditLog({
+          operator_email: staffContext.staffEmail,
+          action: 'UNIVERSAL_LOOKUP_OWNER',
+          category: 'host',
+          target_id: foundProvider.owner_public_id || foundProvider.id,
+          target_name: foundProvider.business_name || profile?.full_name || 'Parking Owner',
+          details: `Staff performed forensic universal lookup on Owner ID: ${foundProvider.owner_public_id || foundProvider.id}`,
+        });
+      }
+
+      return {
+        query: rawTerm,
+        detectedType: 'owner',
+        found: true,
+        timestamp,
+        ownerData: {
+          provider: foundProvider,
+          profile,
+          spaces: hostSpaces,
+          totalBookings: hostBookings.length,
+          totalEarnings,
+          disputesCount,
+          flags,
+        },
+      };
+    }
+
+    // 2. Try Parking Space Search (PBN-S- or ID or space identifier)
+    let foundSpace = Array.from(this.spaces.values()).find(
+      s => (s.space_public_id && s.space_public_id.toUpperCase() === cleanTerm) ||
+           s.id.toUpperCase() === cleanTerm
+    );
+
+    if (foundSpace) {
+      const owner = foundSpace.provider_id ? this.providerProfiles.get(foundSpace.provider_id) : undefined;
+      const ownerProfile = foundSpace.provider_id ? this.profiles.get(foundSpace.provider_id) : undefined;
+      const property = foundSpace.property_id ? this.properties.get(foundSpace.property_id) : undefined;
+      const spaceBookings = Array.from(this.bookings.values()).filter(b => b.space_id === foundSpace!.id);
+      const activeBookings = spaceBookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
+
+      if (staffContext?.staffEmail) {
+        this.recordAuditLog({
+          operator_email: staffContext.staffEmail,
+          action: 'UNIVERSAL_LOOKUP_SPACE',
+          category: 'space',
+          target_id: foundSpace.space_public_id || foundSpace.id,
+          target_name: foundSpace.title,
+          details: `Staff performed forensic universal lookup on Parking Space ID: ${foundSpace.space_public_id || foundSpace.id}`,
+        });
+      }
+
+      return {
+        query: rawTerm,
+        detectedType: 'space',
+        found: true,
+        timestamp,
+        spaceData: {
+          space: foundSpace,
+          owner,
+          ownerProfile,
+          property,
+          totalBookings: spaceBookings.length,
+          activeBookings,
+        },
+      };
+    }
+
+    // 3. Try Customer Search (PBN-C- or Customer profile ID, email, phone)
+    let foundCustomer = Array.from(this.profiles.values()).find(
+      p => (p.customer_public_id && p.customer_public_id.toUpperCase() === cleanTerm) ||
+           p.id.toUpperCase() === cleanTerm ||
+           (p.email && p.email.toLowerCase() === rawTerm.toLowerCase()) ||
+           (p.phone && p.phone.replace(/\D/g, '') === cleanAlphaNum && cleanAlphaNum.length >= 10)
+    );
+
+    if (foundCustomer) {
+      const vehicles = Array.from(this.vehicles.values()).filter(v => v.customer_id === foundCustomer!.id);
+      const customerBookings = Array.from(this.bookings.values()).filter(b => b.customer_id === foundCustomer!.id);
+      const totalSpent = customerBookings
+        .filter(b => b.status === 'completed' || b.status === 'confirmed' || b.status === 'active')
+        .reduce((sum, b) => sum + b.total_amount, 0);
+
+      if (staffContext?.staffEmail) {
+        this.recordAuditLog({
+          operator_email: staffContext.staffEmail,
+          action: 'UNIVERSAL_LOOKUP_CUSTOMER',
+          category: 'user',
+          target_id: foundCustomer.customer_public_id || foundCustomer.id,
+          target_name: foundCustomer.full_name,
+          details: `Staff performed forensic universal lookup on Customer ID: ${foundCustomer.customer_public_id || foundCustomer.id}`,
+        });
+      }
+
+      return {
+        query: rawTerm,
+        detectedType: 'customer',
+        found: true,
+        timestamp,
+        customerData: {
+          profile: foundCustomer,
+          vehicles,
+          totalBookings: customerBookings.length,
+          totalSpent,
+          bookings: customerBookings,
+        },
+      };
+    }
+
+    // 4. Try Booking Search (PKB-, PBN-REF-, or ID)
+    let foundBooking = Array.from(this.bookings.values()).find(
+      b => (b.booking_reference && b.booking_reference.toUpperCase() === cleanTerm) ||
+           (b.booking_customer_reference && b.booking_customer_reference.toUpperCase() === cleanTerm) ||
+           b.id.toUpperCase() === cleanTerm
+    );
+
+    if (foundBooking) {
+      const space = this.spaces.get(foundBooking.space_id);
+      const owner = foundBooking.provider_id ? this.providerProfiles.get(foundBooking.provider_id) : undefined;
+      const customerProfile = this.profiles.get(foundBooking.customer_id);
+
+      if (staffContext?.staffEmail) {
+        this.recordAuditLog({
+          operator_email: staffContext.staffEmail,
+          action: 'UNIVERSAL_LOOKUP_BOOKING',
+          category: 'booking',
+          target_id: foundBooking.booking_reference || foundBooking.id,
+          target_name: foundBooking.customer_display_name || 'Driver Booking',
+          details: `Staff performed forensic universal lookup on Booking Ref: ${foundBooking.booking_reference || foundBooking.id}`,
+        });
+      }
+
+      return {
+        query: rawTerm,
+        detectedType: 'booking',
+        found: true,
+        timestamp,
+        bookingData: {
+          booking: foundBooking,
+          space,
+          owner,
+          customerProfile,
+        },
+      };
+    }
+
+    // 5. Try Vehicle Plate Search (e.g. GJ 01 AB 1234 or GJ01AB1234)
+    const cleanPlateTerm = cleanTerm.replace(/[\s-]/g, '');
+    let foundVehicle = Array.from(this.vehicles.values()).find(
+      v => v.registration_number && v.registration_number.replace(/[\s-]/g, '').toUpperCase() === cleanPlateTerm
+    );
+
+    const plateBookings = foundVehicle
+      ? Array.from(this.bookings.values()).filter(b => b.vehicle_id === foundVehicle!.id)
+      : [];
+
+    if (foundVehicle || plateBookings.length > 0) {
+      const customerId = foundVehicle?.customer_id || (plateBookings[0] ? plateBookings[0].customer_id : undefined);
+      const customerProfile = customerId ? this.profiles.get(customerId) : undefined;
+
+      if (staffContext?.staffEmail) {
+        this.recordAuditLog({
+          operator_email: staffContext.staffEmail,
+          action: 'UNIVERSAL_LOOKUP_VEHICLE',
+          category: 'user',
+          target_id: foundVehicle?.registration_number || rawTerm,
+          target_name: foundVehicle?.make_model || 'Vehicle Plate',
+          details: `Staff performed forensic universal lookup on Vehicle Registration: ${cleanPlateTerm}`,
+        });
+      }
+
+      return {
+        query: rawTerm,
+        detectedType: 'vehicle',
+        found: true,
+        timestamp,
+        vehicleData: {
+          vehicle: foundVehicle,
+          plateNumber: foundVehicle?.registration_number || rawTerm.toUpperCase(),
+          customerProfile,
+          bookingsCount: plateBookings.length,
+          bookings: plateBookings,
+        },
+      };
+    }
+
+    return {
+      query: rawTerm,
+      detectedType: detectedType === 'unknown' ? 'not_found' : detectedType,
+      found: false,
+      timestamp,
+    };
+  }
   // =============================================================
   // PARKING OWNER & HOST MANAGEMENT (Providers)
   // =============================================================
@@ -1066,9 +1392,125 @@ class MarketplaceStore {
     return this.providerProfiles.get(id);
   }
 
+  public getProviderByOwnerPublicId(publicId: string): ProviderProfile | undefined {
+    const clean = publicId.trim().toUpperCase();
+    return Array.from(this.providerProfiles.values()).find(
+      p => p.owner_public_id && p.owner_public_id.toUpperCase() === clean
+    );
+  }
+
   public saveProviderProfile(provider: ProviderProfile): ProviderProfile {
+    const cleanProvider: ProviderProfile = {
+      ...provider,
+      owner_public_id: provider.owner_public_id || generateOwnerPublicId(),
+    };
+    this.providerProfiles.set(cleanProvider.id, cleanProvider);
+    return cleanProvider;
+  }
+
+  public adminSuspendOwner(
+    providerIdOrPublicId: string,
+    reason: string,
+    staffEmail = 'admin@parkbnb.in'
+  ): {
+    success: boolean;
+    provider?: ProviderProfile;
+    deactivatedSpacesCount: number;
+    error?: string;
+  } {
+    const clean = providerIdOrPublicId.trim().toUpperCase();
+    const provider = Array.from(this.providerProfiles.values()).find(
+      p => p.id === providerIdOrPublicId || (p.owner_public_id && p.owner_public_id.toUpperCase() === clean)
+    );
+    if (!provider) {
+      return { success: false, deactivatedSpacesCount: 0, error: 'Provider not found' };
+    }
+
+    // 1. Suspend provider profile
+    provider.verification_status = 'rejected';
+    provider.updated_at = new Date().toISOString();
     this.providerProfiles.set(provider.id, provider);
-    return provider;
+
+    // 2. Suspend base user profile
+    const profile = this.profiles.get(provider.id);
+    if (profile) {
+      profile.status = 'suspended';
+      profile.updated_at = new Date().toISOString();
+      this.profiles.set(profile.id, profile);
+    }
+
+    // 3. Deactivate all parking spaces owned by this provider
+    let deactivatedSpacesCount = 0;
+    for (const [spaceId, space] of this.spaces.entries()) {
+      if (space.provider_id === provider.id) {
+        space.is_active = false;
+        space.status = 'rejected';
+        space.updated_at = new Date().toISOString();
+        this.spaces.set(spaceId, space);
+        deactivatedSpacesCount++;
+      }
+    }
+
+    // 4. Record audit log
+    this.recordAuditLog({
+      action: 'SUSPEND_OWNER_DELIST_SPACES',
+      category: 'host',
+      target_id: provider.owner_public_id || provider.id,
+      target_name: provider.business_name || profile?.full_name || 'Parking Owner',
+      details: `Admin suspended parking owner and delisted ${deactivatedSpacesCount} spaces. Reason: ${reason}`,
+      operator_email: staffEmail,
+    });
+
+    return { success: true, provider, deactivatedSpacesCount };
+  }
+
+  public adminReactivateOwner(
+    providerIdOrPublicId: string,
+    staffEmail = 'admin@parkbnb.in'
+  ): {
+    success: boolean;
+    provider?: ProviderProfile;
+    error?: string;
+  } {
+    const clean = providerIdOrPublicId.trim().toUpperCase();
+    const provider = Array.from(this.providerProfiles.values()).find(
+      p => p.id === providerIdOrPublicId || (p.owner_public_id && p.owner_public_id.toUpperCase() === clean)
+    );
+    if (!provider) {
+      return { success: false, error: 'Provider not found' };
+    }
+
+    provider.verification_status = 'approved';
+    provider.updated_at = new Date().toISOString();
+    this.providerProfiles.set(provider.id, provider);
+
+    const profile = this.profiles.get(provider.id);
+    if (profile) {
+      profile.status = 'active';
+      profile.updated_at = new Date().toISOString();
+      this.profiles.set(profile.id, profile);
+    }
+
+    // Re-activate spaces
+    for (const [spaceId, space] of this.spaces.entries()) {
+      if (space.provider_id === provider.id) {
+        space.is_active = true;
+        space.status = 'approved';
+        space.updated_at = new Date().toISOString();
+        this.spaces.set(spaceId, space);
+      }
+    }
+
+    this.recordAuditLog({
+      action: 'REACTIVATE_OWNER',
+      category: 'host',
+      target_id: provider.owner_public_id || provider.id,
+      target_name: provider.business_name || profile?.full_name || 'Parking Owner',
+      details: 'Admin reactivated parking owner and restored verified spaces.',
+      operator_email: staffEmail,
+    });
+
+    return { success: true, provider };
   }
 
   public getAllProviders(): ProviderProfile[] {
@@ -1287,9 +1729,22 @@ class MarketplaceStore {
     return Array.from(this.spaces.values()).filter(s => s.provider_id === providerId);
   }
 
+  public getSpaceBySpacePublicId(publicId: string): ParkingSpace | undefined {
+    const clean = publicId.trim().toUpperCase();
+    return Array.from(this.spaces.values()).find(
+      s => s.space_public_id && s.space_public_id.toUpperCase() === clean
+    );
+  }
+
   public createSpace(space: ParkingSpace): ParkingSpace {
-    this.spaces.set(space.id, space);
-    return space;
+    const provider = this.providerProfiles.get(space.provider_id);
+    const cleanSpace: ParkingSpace = {
+      ...space,
+      space_public_id: space.space_public_id || generateSpacePublicId(),
+      owner_public_id: space.owner_public_id || provider?.owner_public_id || undefined,
+    };
+    this.spaces.set(space.id, cleanSpace);
+    return cleanSpace;
   }
 
   public updateSpace(id: string, updates: Partial<ParkingSpace>): ParkingSpace | null {
@@ -1559,10 +2014,14 @@ class MarketplaceStore {
   // =============================================================
   public createBooking(booking: Booking): Booking {
     const customer = this.profiles.get(booking.customer_id);
+    const space = this.spaces.get(booking.space_id);
+    const provider = space?.provider_id ? this.providerProfiles.get(space.provider_id) : undefined;
     const bookingWithPrivacy: Booking = {
       ...booking,
       booking_customer_reference: booking.booking_customer_reference || generateBookingCustomerReference(),
       customer_display_name: booking.customer_display_name || maskCustomerDisplayName(customer?.full_name),
+      space_public_id: booking.space_public_id || space?.space_public_id,
+      owner_public_id: booking.owner_public_id || provider?.owner_public_id,
     };
     this.bookings.set(booking.id, bookingWithPrivacy);
     return bookingWithPrivacy;

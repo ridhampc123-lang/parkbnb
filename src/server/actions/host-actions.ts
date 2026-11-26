@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { getServerSession } from '@/lib/auth/session';
 import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
 
 /**
  * Host Gate Check-In: Confirms arrival of driver's vehicle at the gate, marks booking active
@@ -19,6 +20,8 @@ export async function hostCheckInAction(bookingId: string) {
   if (!result.success) {
     return { error: result.error || 'Failed to check in driver.' };
   }
+
+  await repository.updateBookingStatus(bookingId, 'active');
 
   revalidatePath('/host/bookings');
   revalidatePath('/host');
@@ -43,6 +46,8 @@ export async function hostCheckOutAction(bookingId: string) {
   if (!result.success) {
     return { error: result.error || 'Failed to check out driver.' };
   }
+
+  await repository.updateBookingStatus(bookingId, 'completed');
 
   revalidatePath('/host/bookings');
   revalidatePath('/host/spaces');
@@ -122,6 +127,16 @@ export async function updateProviderBankingAction(formData: FormData) {
 
   const store = getLocalStore();
   const updated = store.updateProviderBankingDetails(session.user.id, {
+    bank_name: bankName,
+    bank_account_number: bankAccountNumber,
+    bank_ifsc_code: bankIfscCode,
+    bank_account_holder: bankAccountHolder,
+    upi_id: upiId,
+    payout_preference: payoutPreference,
+  });
+
+  await repository.upsertProviderProfile({
+    id: session.user.id,
     bank_name: bankName,
     bank_account_number: bankAccountNumber,
     bank_ifsc_code: bankIfscCode,
