@@ -18,11 +18,14 @@ import {
   Navigation,
   Compass,
   X,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  Calendar
 } from 'lucide-react';
 import { ParkingSpace, VehicleType } from '@/types/database';
 import { INDIAN_CITIES } from '@/lib/constants/cities';
 import { calculateDistanceKm, formatDistanceInfo } from '@/lib/geo/distance';
+import { checkBatchAvailabilityAction } from '@/server/actions/booking-actions';
 
 interface ParkingSpaceWithDistance extends ParkingSpace {
   distanceKm?: number;
@@ -36,6 +39,12 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
   const initialDestination = searchParams.get('destination') || '';
   const initialCity = searchParams.get('city') || 'all';
 
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const initialStartDate = searchParams.get('start_date') || todayStr;
+  const initialStartTime = searchParams.get('start_time') || '10:00';
+  const initialEndDate = searchParams.get('end_date') || todayStr;
+  const initialEndTime = searchParams.get('end_time') || '14:00';
+
   const [destination, setDestination] = useState(initialDestination);
   const [cityFilter, setCityFilter] = useState<string>(initialCity);
   const [vehicleFilter, setVehicleFilter] = useState<string>('all');
@@ -44,6 +53,15 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
   const [maxPrice, setMaxPrice] = useState<number>(200);
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'distance_asc'>('price_asc');
   const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+
+  // Time & Slot Availability State
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [startTime, setStartTime] = useState(initialStartTime);
+  const [endDate, setEndDate] = useState(initialEndDate);
+  const [endTime, setEndTime] = useState(initialEndTime);
+  const [hideOccupied, setHideOccupied] = useState(false);
+  const [availabilityMap, setAvailabilityMap] = useState<Record<string, boolean>>({});
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
   // Customer live GPS Location State
   const [customerCoords, setCustomerCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -55,6 +73,54 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
   const [mobileTab, setMobileTab] = useState<'list' | 'map'>('list');
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
+  // Real-time batch check of parking space availability
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkAvailability() {
+      if (!startDate || !startTime || !endDate || !endTime) return;
+      const startIso = `${startDate}T${startTime}:00Z`;
+      const endIso = `${endDate}T${endTime}:00Z`;
+      const sMs = new Date(startIso).getTime();
+      const eMs = new Date(endIso).getTime();
+      if (isNaN(sMs) || isNaN(eMs) || eMs <= sMs) return;
+
+      const spaceIds = initialSpaces.map((s) => s.id);
+      if (spaceIds.length === 0) return;
+
+      setCheckingAvailability(true);
+      try {
+        const res = await checkBatchAvailabilityAction({
+          spaceIds,
+          startTime: startIso,
+          endTime: endIso,
+        });
+        if (!cancelled && res.availabilityMap) {
+          setAvailabilityMap(res.availabilityMap);
+        }
+      } catch {
+        // Silently ignore network check glitches
+      } finally {
+        if (!cancelled) {
+          setCheckingAvailability(false);
+        }
+      }
+    }
+
+    const timer = setTimeout(() => {
+      checkAvailability();
+    }, 200);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [initialSpaces, startDate, startTime, endDate, endTime]);
+
+  const occupiedCount = useMemo(() => {
+    return Object.values(availabilityMap).filter((v) => v === false).length;
+  }, [availabilityMap]);
+
   // Active Filter Count for mobile badge
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -64,8 +130,9 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
     if (evOnly) count++;
     if (maxPrice < 200) count++;
     if (sortBy !== 'price_asc' && sortBy !== 'distance_asc') count++;
+    if (hideOccupied) count++;
     return count;
-  }, [cityFilter, vehicleFilter, typeFilter, evOnly, maxPrice, sortBy]);
+  }, [cityFilter, vehicleFilter, typeFilter, evOnly, maxPrice, sortBy, hideOccupied]);
 
   // Active City configuration
   const activeCityConfig = INDIAN_CITIES.find(
@@ -177,6 +244,11 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
           return false;
         }
 
+        // Hide occupied spaces if user toggled "Hide Booked"
+        if (hideOccupied && availabilityMap[space.id] === false) {
+          return false;
+        }
+
         return true;
       })
       .sort((a, b) => {
@@ -197,6 +269,8 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
     sortBy,
     customerCoords,
     maxRadiusKm,
+    hideOccupied,
+    availabilityMap,
   ]);
 
   return (
@@ -437,6 +511,73 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
             );
           })}
         </div>
+
+        {/* Real-Time Parking Time Range & Availability Controls */}
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-border/60 text-xs">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wide">
+              <Clock className="w-3.5 h-3.5 text-primary" /> Booking Hours:
+            </span>
+
+            {/* Arrival */}
+            <div className="flex items-center gap-1 bg-surface-muted border border-border rounded-control px-2 py-1">
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Arrival:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+              />
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            {/* Departure */}
+            <div className="flex items-center gap-1 bg-surface-muted border border-border rounded-control px-2 py-1">
+              <span className="text-[10px] text-muted-foreground uppercase font-semibold">Exit:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+              />
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            {/* Checking loader */}
+            {checkingAvailability && (
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin text-primary" /> Checking slot availability...
+              </span>
+            )}
+          </div>
+
+          {/* Hide Occupied spots toggle */}
+          {occupiedCount > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setHideOccupied(!hideOccupied)}
+                className={`px-2.5 py-1 rounded-control text-xs font-semibold border flex items-center gap-1.5 transition-colors ${
+                  hideOccupied
+                    ? 'bg-red-50 text-red-700 border-red-300 font-bold'
+                    : 'bg-surface-muted text-foreground border-border hover:bg-border'
+                }`}
+              >
+                <span>{hideOccupied ? '✓ Hiding Occupied Spots' : `Filter Out Booked (${occupiedCount})`}</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Split Layout: Results List + Interactive Pan-India Map Preview */}
@@ -563,9 +704,16 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       {/* Badges & Actions */}
                       <div className="pt-3 border-t border-border flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" /> Verified
-                          </span>
+                          {/* Live Slot Conflict / Availability Badge */}
+                          {availabilityMap[space.id] === false ? (
+                            <span className="text-[10px] font-bold uppercase bg-red-100 text-red-800 border border-red-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 text-red-600" /> Booked for selected hours
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3" /> Available
+                            </span>
+                          )}
 
                           {/* Distance Badge with walking estimate */}
                           {space.distanceKm !== undefined && (
@@ -589,10 +737,14 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                         </div>
 
                         <Link
-                          href={`/parking/${space.id}`}
-                          className="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow transition-colors flex items-center gap-1 shrink-0 min-h-[44px]"
+                          href={`/parking/${space.id}?start_date=${startDate}&start_time=${startTime}&end_date=${endDate}&end_time=${endTime}`}
+                          className={`px-4 py-2 text-xs font-bold rounded-control shadow transition-colors flex items-center gap-1 shrink-0 min-h-[44px] ${
+                            availabilityMap[space.id] === false
+                              ? 'bg-amber-600/90 hover:bg-amber-700 text-white'
+                              : 'bg-primary hover:bg-primary-hover text-white'
+                          }`}
                         >
-                          <span>Book</span>
+                          <span>{availabilityMap[space.id] === false ? 'Occupied (View)' : 'Book'}</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
@@ -667,13 +819,16 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                   >
                     <div
                       className={`px-2.5 py-1.5 rounded-full text-xs font-bold shadow-md flex items-center gap-1 transition-transform min-h-[36px] ${
-                        isSelected
-                          ? 'bg-slate-900 text-white scale-110 ring-2 ring-primary'
-                          : 'bg-primary text-white hover:scale-105'
+                        availabilityMap[space.id] === false
+                          ? 'bg-red-700 text-white'
+                          : isSelected
+                            ? 'bg-slate-900 text-white scale-110 ring-2 ring-primary'
+                            : 'bg-primary text-white hover:scale-105'
                       }`}
                     >
                       <MapPin className="w-3 h-3 text-accent" />
                       <span>₹{space.hourly_rate}</span>
+                      {availabilityMap[space.id] === false && <span className="text-[9px] font-normal opacity-90">(Booked)</span>}
                     </div>
 
                     {/* Hover/Tap Card */}
@@ -686,6 +841,11 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       <div className="text-muted-foreground text-[10px]">
                         {space.property?.area}, {space.property?.city}
                       </div>
+                      {availabilityMap[space.id] === false && (
+                        <div className="text-red-600 font-bold text-[10px] mt-0.5">
+                          ⚠️ Reserved for selected hours
+                        </div>
+                      )}
                       {space.distanceText && (
                         <div className="text-blue-600 font-bold font-mono text-[10px] mt-0.5">
                           📍 {space.distanceText} away (~{space.walkingTimeMinutes}m walk)
@@ -694,10 +854,14 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
                       <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
                         <span className="text-primary font-bold">₹{space.hourly_rate} / hr</span>
                         <Link
-                          href={`/parking/${space.id}`}
-                          className="px-2.5 py-1 bg-primary text-white text-[10px] font-bold rounded-control hover:bg-primary-hover"
+                          href={`/parking/${space.id}?start_date=${startDate}&start_time=${startTime}&end_date=${endDate}&end_time=${endTime}`}
+                          className={`px-2.5 py-1 text-white text-[10px] font-bold rounded-control ${
+                            availabilityMap[space.id] === false
+                              ? 'bg-amber-600 hover:bg-amber-700'
+                              : 'bg-primary hover:bg-primary-hover'
+                          }`}
                         >
-                          Book Slot
+                          {availabilityMap[space.id] === false ? 'Occupied (View)' : 'Book Slot'}
                         </Link>
                       </div>
                     </div>
@@ -800,6 +964,59 @@ export function SearchClient({ initialSpaces }: { initialSpaces: ParkingSpace[] 
 
             {/* Scrollable Filter Options */}
             <div className="p-5 overflow-y-auto space-y-5 text-xs">
+              {/* Parking Hours & Slot Conflict Filter */}
+              <div className="space-y-2 p-3 bg-surface-muted rounded-control border border-border">
+                <label className="block text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-primary" /> Parking Hours & Availability
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block mb-0.5">Arrival</span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full text-xs p-1.5 bg-surface border border-border rounded"
+                    />
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full text-xs p-1.5 bg-surface border border-border rounded mt-1"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block mb-0.5">Departure</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full text-xs p-1.5 bg-surface border border-border rounded"
+                    />
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full text-xs p-1.5 bg-surface border border-border rounded mt-1"
+                    />
+                  </div>
+                </div>
+
+                {occupiedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setHideOccupied(!hideOccupied)}
+                    className={`w-full py-2 px-3 text-xs font-semibold rounded border mt-2 flex items-center justify-center gap-1.5 ${
+                      hideOccupied
+                        ? 'bg-red-50 text-red-700 border-red-300 font-bold'
+                        : 'bg-surface text-foreground border-border'
+                    }`}
+                  >
+                    <span>{hideOccupied ? '✓ Hiding Occupied Spots' : `Filter Out Booked (${occupiedCount})`}</span>
+                  </button>
+                )}
+              </div>
+
               {/* City Selection */}
               <div>
                 <label className="block text-xs font-bold text-foreground mb-2">City / Metro</label>

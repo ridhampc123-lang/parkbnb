@@ -377,3 +377,67 @@ export async function customerCheckOutAction(bookingId: string) {
     overstayAmount: result.overstayAmount,
   };
 }
+
+export async function checkSpaceAvailabilityAction(params: {
+  spaceId: string;
+  startTime: string;
+  endTime: string;
+  customerId?: string;
+}) {
+  const { spaceId, startTime, endTime, customerId } = params;
+  if (!spaceId || !startTime || !endTime) {
+    return { available: false, error: 'Missing parameters for availability check.' };
+  }
+
+  const startMs = new Date(startTime).getTime();
+  const endMs = new Date(endTime).getTime();
+  if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) {
+    return { available: false, error: 'Departure time must be strictly after arrival time.' };
+  }
+
+  const available = await repository.isSpaceAvailable(spaceId, startTime, endTime, customerId);
+  const intervals = getLocalStore().getBookedIntervals(spaceId, startTime.slice(0, 10));
+
+  return {
+    available,
+    intervals,
+    error: available ? undefined : 'This parking space is already reserved by another driver for the selected time window.',
+  };
+}
+
+export async function checkBatchAvailabilityAction(params: {
+  spaceIds: string[];
+  startTime: string;
+  endTime: string;
+}) {
+  const { spaceIds, startTime, endTime } = params;
+  if (!spaceIds || spaceIds.length === 0 || !startTime || !endTime) {
+    return { availabilityMap: {} };
+  }
+
+  const startMs = new Date(startTime).getTime();
+  const endMs = new Date(endTime).getTime();
+  if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) {
+    return { availabilityMap: {} };
+  }
+
+  const availabilityMap: Record<string, boolean> = {};
+  await Promise.all(
+    spaceIds.map(async (id) => {
+      const isAvail = await repository.isSpaceAvailable(id, startTime, endTime);
+      availabilityMap[id] = isAvail;
+    })
+  );
+
+  return { availabilityMap };
+}
+
+export async function getSpaceBookedIntervalsAction(params: {
+  spaceId: string;
+  date?: string;
+}) {
+  const { spaceId, date } = params;
+  if (!spaceId) return { intervals: [] };
+  const intervals = getLocalStore().getBookedIntervals(spaceId, date);
+  return { intervals };
+}

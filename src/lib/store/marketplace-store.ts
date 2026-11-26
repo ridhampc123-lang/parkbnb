@@ -1855,7 +1855,17 @@ class MarketplaceStore {
       return false;
     }
 
-    const space = this.spaces.get(spaceId);
+    // Resolve space by id or public_id
+    let space = this.spaces.get(spaceId);
+    if (!space) {
+      for (const s of this.spaces.values()) {
+        if (s.id === spaceId || s.space_public_id === spaceId) {
+          space = s;
+          break;
+        }
+      }
+    }
+
     if (!space || space.status !== 'approved' || !space.is_active) {
       return false;
     }
@@ -1869,18 +1879,63 @@ class MarketplaceStore {
 
     const now = Date.now();
 
+    // Helper to get deterministic UUID for cross-layer representation matching
+    const toUuid = (val?: string | null): string => {
+      if (!val) return '';
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+        return val.toLowerCase();
+      }
+      const hash = crypto.createHash('md5').update(val).digest('hex');
+      return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`.toLowerCase();
+    };
+
+    // Collect all valid identifier representations of this space (caller id, space.id, space_public_id, and UUID hashes)
+    const spaceIds = new Set<string>([spaceId, space.id]);
+    if (space.space_public_id) spaceIds.add(space.space_public_id);
+    const uCaller = toUuid(spaceId);
+    if (uCaller) spaceIds.add(uCaller);
+    const uSpace = toUuid(space.id);
+    if (uSpace) spaceIds.add(uSpace);
+    if (space.space_public_id) {
+      const uPub = toUuid(space.space_public_id);
+      if (uPub) spaceIds.add(uPub);
+    }
+
+    // 1. Check all confirmed, active, and active hold_pending bookings
     for (const b of this.bookings.values()) {
-      if (b.space_id === spaceId && (b.status === 'confirmed' || b.status === 'active')) {
-        const bStart = new Date(b.start_time).getTime();
-        const bEnd = new Date(b.end_time).getTime();
-        if (reqStart < bEnd && reqEnd > bStart) {
-          return false;
+      const bSpaceUuid = toUuid(b.space_id);
+      const isBookingMatch =
+        spaceIds.has(b.space_id) ||
+        (bSpaceUuid && spaceIds.has(bSpaceUuid)) ||
+        (b.space?.id && (spaceIds.has(b.space.id) || spaceIds.has(toUuid(b.space.id)))) ||
+        (b.space?.space_public_id && spaceIds.has(b.space.space_public_id));
+
+      if (isBookingMatch) {
+        const isConfirmedOrActive = b.status === 'confirmed' || b.status === 'active';
+        const isHoldPendingActive =
+          b.status === 'hold_pending' &&
+          new Date(b.created_at).getTime() + 10 * 60 * 1000 > now;
+
+        if (isConfirmedOrActive || isHoldPendingActive) {
+          // If the customer themselves holds this pending reservation, allow them to complete checkout
+          if (excludingCustomerId && b.customer_id === excludingCustomerId && isHoldPendingActive) {
+            continue;
+          }
+
+          const bStart = new Date(b.start_time).getTime();
+          const bEnd = new Date(b.end_time).getTime();
+          if (reqStart < bEnd && reqEnd > bStart) {
+            return false;
+          }
         }
       }
     }
 
+    // 2. Check host maintenance blocks
     for (const block of this.availabilityBlocks.values()) {
-      if (block.space_id === spaceId) {
+      const blockSpaceUuid = toUuid(block.space_id);
+      const isBlockMatch = spaceIds.has(block.space_id) || (blockSpaceUuid && spaceIds.has(blockSpaceUuid));
+      if (isBlockMatch) {
         const bStart = new Date(block.start_time).getTime();
         const bEnd = new Date(block.end_time).getTime();
         if (reqStart < bEnd && reqEnd > bStart) {
@@ -1889,8 +1944,11 @@ class MarketplaceStore {
       }
     }
 
+    // 3. Check active temporary holds
     for (const h of this.holds.values()) {
-      if (h.space_id === spaceId && h.is_active) {
+      const hSpaceUuid = toUuid(h.space_id);
+      const isHoldMatch = spaceIds.has(h.space_id) || (hSpaceUuid && spaceIds.has(hSpaceUuid));
+      if (isHoldMatch && h.is_active) {
         if (excludingCustomerId && h.customer_id === excludingCustomerId) {
           continue;
         }
@@ -1907,6 +1965,69 @@ class MarketplaceStore {
     }
 
     return true;
+  }
+
+  public getBookedIntervals(spaceId: string, dateStr?: string): Array<{ startTime: string; endTime: string; status: string }> {
+    let space = this.spaces.get(spaceId);
+    if (!space) {
+      for (const s of this.spaces.values()) {
+        if (s.id === spaceId || s.space_public_id === spaceId) {
+          space = s;
+          break;
+        }
+      }
+    }
+
+    const toUuid = (val?: string | null): string => {
+      if (!val) return '';
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val)) {
+        return val.toLowerCase();
+      }
+      const hash = crypto.createHash('md5').update(val).digest('hex');
+      return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`.toLowerCase();
+    };
+
+    const spaceIds = new Set<string>([spaceId]);
+    const uCaller = toUuid(spaceId);
+    if (uCaller) spaceIds.add(uCaller);
+    if (space) {
+      spaceIds.add(space.id);
+      const uSpace = toUuid(space.id);
+      if (uSpace) spaceIds.add(uSpace);
+      if (space.space_public_id) {
+        spaceIds.add(space.space_public_id);
+        const uPub = toUuid(space.space_public_id);
+        if (uPub) spaceIds.add(uPub);
+      }
+    }
+
+    const now = Date.now();
+    const intervals: Array<{ startTime: string; endTime: string; status: string }> = [];
+
+    for (const b of this.bookings.values()) {
+      const bSpaceUuid = toUuid(b.space_id);
+      const isMatch =
+        spaceIds.has(b.space_id) ||
+        (bSpaceUuid && spaceIds.has(bSpaceUuid)) ||
+        (b.space?.id && (spaceIds.has(b.space.id) || spaceIds.has(toUuid(b.space.id)))) ||
+        (b.space?.space_public_id && spaceIds.has(b.space.space_public_id));
+
+      if (isMatch) {
+        const isActive = b.status === 'confirmed' || b.status === 'active';
+        const isHoldPending = b.status === 'hold_pending' && new Date(b.created_at).getTime() + 10 * 60 * 1000 > now;
+        if (isActive || isHoldPending) {
+          if (!dateStr || b.start_time.startsWith(dateStr) || b.end_time.startsWith(dateStr)) {
+            intervals.push({
+              startTime: b.start_time,
+              endTime: b.end_time,
+              status: b.status,
+            });
+          }
+        }
+      }
+    }
+
+    return intervals;
   }
 
   public isSpaceAvailable(spaceId: string, startTime: string, endTime: string, customerId?: string): boolean {

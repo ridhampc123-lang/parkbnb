@@ -1,13 +1,12 @@
 import { Suspense } from 'react';
-import { getLocalStore } from '@/lib/store/marketplace-store';
+import { repository } from '@/lib/db/supabase-repository';
 import { SearchClient } from './search-client';
 import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default function SearchPage() {
-  const store = getLocalStore();
-  const approvedSpaces = store.getApprovedPublicSpaces();
+export default async function SearchPage() {
+  const approvedSpaces = await repository.getApprovedSpaces();
 
   return (
     <Suspense

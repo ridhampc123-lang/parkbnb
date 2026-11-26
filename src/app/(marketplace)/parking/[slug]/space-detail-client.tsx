@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   MapPin,
@@ -29,7 +29,11 @@ import {
   Camera
 } from 'lucide-react';
 import { generateGoogleMapsDirectionUrl } from '@/lib/location/pincode-directory';
-import { initiateBookingHoldAction, confirmBookingPaymentAction } from '@/server/actions/booking-actions';
+import {
+  initiateBookingHoldAction,
+  confirmBookingPaymentAction,
+  checkSpaceAvailabilityAction
+} from '@/server/actions/booking-actions';
 import { completeCustomerOnboardingAction } from '@/server/actions/auth-actions';
 import {
   checkMobileIdentityAction,
@@ -42,6 +46,7 @@ import { ParkingSpace, CustomerVehicle, VehicleType, Profile } from '@/types/dat
 
 export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // -------------------------------------------------------------
   // 1. Public Discovery & Time Selection State (No auth required)
@@ -49,11 +54,22 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
 
-  const [startDate, setStartDate] = useState(todayStr);
-  const [startTime, setStartTime] = useState('10:00');
-  const [endDate, setEndDate] = useState(todayStr);
-  const [endTime, setEndTime] = useState('14:00');
+  const paramStartDate = searchParams?.get('start_date');
+  const paramStartTime = searchParams?.get('start_time');
+  const paramEndDate = searchParams?.get('end_date');
+  const paramEndTime = searchParams?.get('end_time');
+
+  const [startDate, setStartDate] = useState(paramStartDate || todayStr);
+  const [startTime, setStartTime] = useState(paramStartTime || '10:00');
+  const [endDate, setEndDate] = useState(paramEndDate || todayStr);
+  const [endTime, setEndTime] = useState(paramEndTime || '14:00');
   const [vehicleType, setVehicleType] = useState<VehicleType>('car_sedan');
+
+  // Real-time Slot Availability Check State
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [isSlotAvailable, setIsSlotAvailable] = useState<boolean | null>(null);
+  const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null);
+  const [bookedIntervals, setBookedIntervals] = useState<Array<{ startTime: string; endTime: string; status: string }>>([]);
 
   // -------------------------------------------------------------
   // 2. Checkout Modal & Customer Memory State
@@ -201,6 +217,57 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
   }, [otpCooldown]);
 
   // -------------------------------------------------------------
+  // Real-Time Dynamic Slot Availability & Overlap Check
+  // -------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkSlot() {
+      const startIso = `${startDate}T${startTime}:00Z`;
+      const endIso = `${endDate}T${endTime}:00Z`;
+      const startMs = new Date(startIso).getTime();
+      const endMs = new Date(endIso).getTime();
+
+      if (isNaN(startMs) || isNaN(endMs) || endMs <= startMs) {
+        setIsSlotAvailable(null);
+        setAvailabilityMessage(null);
+        return;
+      }
+
+      setIsCheckingAvailability(true);
+      try {
+        const result = await checkSpaceAvailabilityAction({
+          spaceId: space.id,
+          startTime: startIso,
+          endTime: endIso,
+        });
+
+        if (!cancelled) {
+          setIsSlotAvailable(result.available);
+          setAvailabilityMessage(result.error || null);
+          if (result.intervals) {
+            setBookedIntervals(result.intervals);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setIsSlotAvailable(true); // Don't permanently block on transient network glitch
+        }
+      } finally {
+        if (!cancelled) {
+          setIsCheckingAvailability(false);
+        }
+      }
+    }
+
+    checkSlot();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [space.id, startDate, startTime, endDate, endTime]);
+
+  // -------------------------------------------------------------
   // 6. Step 2 -> Step 3 Action: Customer Clicks "Book Now"
   // -------------------------------------------------------------
   async function handleBookNowClick() {
@@ -211,6 +278,14 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
 
     if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
       setErrorMessage('Departure time must be strictly after arrival time.');
+      return;
+    }
+
+    if (isSlotAvailable === false) {
+      setErrorMessage(
+        availabilityMessage ||
+          'This parking spot is reserved by another driver for your chosen time. Please choose another arrival or departure time.'
+      );
       return;
     }
 
@@ -740,15 +815,74 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
                 </div>
               )}
 
+              {/* Real-Time Availability Conflict Warning Banner */}
+              {isCheckingAvailability ? (
+                <div className="p-3 bg-surface-muted border border-border rounded-control text-xs flex items-center gap-2 text-muted-foreground animate-pulse">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                  <span>Checking slot availability for selected hours...</span>
+                </div>
+              ) : isSlotAvailable === false ? (
+                <div className="p-3.5 bg-red-50 border border-red-300 text-red-900 rounded-control text-xs space-y-2 animate-in fade-in">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-red-600 shrink-0" />
+                    <div>
+                      <strong className="block font-bold text-red-800 text-[12px]">⚠️ Slot Already Booked for this Time</strong>
+                      <span className="text-[11px] text-red-700 leading-tight block mt-0.5">
+                        {availabilityMessage ||
+                          'Another user has booked or reserved this parking bay during these hours. Please choose another arrival or departure time.'}
+                      </span>
+                    </div>
+                  </div>
+                  {bookedIntervals.length > 0 && (
+                    <div className="pt-2 border-t border-red-200/80 text-[10px] text-red-700">
+                      <span className="font-semibold">Occupied windows on {startDate}:</span>
+                      <div className="flex flex-wrap gap-1.5 mt-1">
+                        {bookedIntervals.map((int, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-mono font-medium border border-red-200"
+                          >
+                            {int.startTime.slice(11, 16)} – {int.endTime.slice(11, 16)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : isSlotAvailable === true ? (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-control text-xs flex items-center gap-2 font-medium">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Slot is available for these hours!</span>
+                </div>
+              ) : null}
+
               {/* Clear Book Now Action */}
               <button
                 type="button"
                 onClick={handleBookNowClick}
-                disabled={space.status !== 'approved' || !space.is_active}
-                className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-control shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                disabled={space.status !== 'approved' || !space.is_active || isSlotAvailable === false || isCheckingAvailability}
+                className={`w-full py-3 px-4 text-white text-sm font-bold rounded-control shadow-md transition-all flex items-center justify-center gap-2 ${
+                  isSlotAvailable === false
+                    ? 'bg-red-600/85 cursor-not-allowed hover:bg-red-600'
+                    : 'bg-primary hover:bg-primary-hover disabled:opacity-60'
+                }`}
               >
-                <span>Book Now</span>
-                <ChevronRight className="w-4 h-4" />
+                {isCheckingAvailability ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying Slot...</span>
+                  </>
+                ) : isSlotAvailable === false ? (
+                  <>
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Slot Booked (Unavailable)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Book Now</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
               <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1 pt-1">
@@ -768,7 +902,9 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
             <span className="text-lg font-black text-foreground">₹{space.hourly_rate}</span>
             <span className="text-xs text-muted-foreground">/ hr</span>
           </div>
-          {livePricing ? (
+          {isSlotAvailable === false ? (
+            <div className="text-[11px] font-bold text-red-600">Occupied for selected hours</div>
+          ) : livePricing ? (
             <div className="text-[11px] font-semibold text-primary">
               Est. ₹{livePricing.totalAmount.toFixed(0)} ({livePricing.totalHours} hr{livePricing.totalHours > 1 ? 's' : ''})
             </div>
@@ -780,11 +916,21 @@ export function SpaceDetailClient({ space }: { space: ParkingSpace }) {
         <button
           type="button"
           onClick={handleBookNowClick}
-          disabled={space.status !== 'approved' || !space.is_active}
-          className="py-2.5 px-6 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-control shadow-md flex items-center gap-1.5 min-h-[44px] disabled:opacity-50"
+          disabled={space.status !== 'approved' || !space.is_active || isSlotAvailable === false || isCheckingAvailability}
+          className={`py-2.5 px-6 text-white text-xs font-bold rounded-control shadow-md flex items-center gap-1.5 min-h-[44px] ${
+            isSlotAvailable === false
+              ? 'bg-red-600/85 cursor-not-allowed'
+              : 'bg-primary hover:bg-primary-hover disabled:opacity-50'
+          }`}
         >
-          <span>Book Slot</span>
-          <ChevronRight className="w-4 h-4" />
+          {isCheckingAvailability ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : isSlotAvailable === false ? (
+            <AlertCircle className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+          <span>{isSlotAvailable === false ? 'Slot Booked' : 'Book Slot'}</span>
         </button>
       </div>
 

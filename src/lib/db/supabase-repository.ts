@@ -1056,38 +1056,42 @@ export class SupabaseRepository {
     endTime: string,
     holdMinutes = 10
   ): Promise<BookingHold | null> {
-    const isRealUuidSpace = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(spaceId);
-    const isRealUuidCust = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId);
+    // 1. Strict overlap check across Supabase PostgreSQL and memory
+    const available = await this.isSpaceAvailable(spaceId, startTime, endTime, customerId);
+    if (!available) {
+      return null;
+    }
 
-    if (isRealUuidSpace && isRealUuidCust) {
-      const supabase = await this.getClient();
-      if (supabase) {
-        try {
-          const { data, error } = await supabase.rpc('create_booking_hold', {
-            p_space_id: spaceId,
-            p_customer_id: customerId,
-            p_start_time: startTime,
-            p_end_time: endTime,
-            p_hold_minutes: holdMinutes,
-          });
+    const validSpaceId = ensureValidUuid(spaceId);
+    const validCustomerId = ensureValidUuid(customerId);
 
-          if (!error && data && data.length > 0 && data[0].success) {
-            const hold: BookingHold = {
-              id: data[0].hold_id,
-              space_id: spaceId,
-              customer_id: customerId,
-              start_time: startTime,
-              end_time: endTime,
-              expires_at: data[0].expires_at,
-              is_active: true,
-              created_at: new Date().toISOString(),
-            };
-            getLocalStore().createHold(spaceId, customerId, startTime, endTime, holdMinutes);
-            return hold;
-          }
-        } catch (e) {
-          console.warn('[Repository] createHold rpc error:', e);
+    const supabase = await this.getClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.rpc('create_booking_hold', {
+          p_space_id: validSpaceId,
+          p_customer_id: validCustomerId,
+          p_start_time: startTime,
+          p_end_time: endTime,
+          p_hold_minutes: holdMinutes,
+        });
+
+        if (!error && data && data.length > 0 && data[0].success) {
+          const hold: BookingHold = {
+            id: data[0].hold_id,
+            space_id: spaceId,
+            customer_id: customerId,
+            start_time: startTime,
+            end_time: endTime,
+            expires_at: data[0].expires_at,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          };
+          getLocalStore().createHold(spaceId, customerId, startTime, endTime, holdMinutes);
+          return hold;
         }
+      } catch (e) {
+        console.warn('[Repository] createHold rpc notice:', e);
       }
     }
     return getLocalStore().createHold(spaceId, customerId, startTime, endTime, holdMinutes);
@@ -1096,21 +1100,19 @@ export class SupabaseRepository {
   async releaseHold(spaceId: string, customerId: string): Promise<void> {
     getLocalStore().releaseHold(spaceId, customerId);
 
-    const isRealUuidSpace = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(spaceId);
-    const isRealUuidCust = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId);
+    const validSpaceId = ensureValidUuid(spaceId);
+    const validCustomerId = ensureValidUuid(customerId);
 
-    if (isRealUuidSpace && isRealUuidCust) {
-      const supabase = await this.getClient();
-      if (supabase) {
-        try {
-          await supabase
-            .from('booking_holds')
-            .update({ is_active: false })
-            .eq('space_id', spaceId)
-            .eq('customer_id', customerId);
-        } catch (e) {
-          console.warn('[Repository] releaseHold error:', e);
-        }
+    const supabase = await this.getClient();
+    if (supabase) {
+      try {
+        await supabase
+          .from('booking_holds')
+          .update({ is_active: false })
+          .eq('space_id', validSpaceId)
+          .eq('customer_id', validCustomerId);
+      } catch (e) {
+        console.warn('[Repository] releaseHold error:', e);
       }
     }
   }
@@ -1127,27 +1129,80 @@ export class SupabaseRepository {
     return getLocalStore().cleanupExpiredHoldsAndOtps();
   }
 
-  async isSpaceAvailable(spaceId: string, startTime: string, endTime: string): Promise<boolean> {
-    const isRealUuidSpace = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(spaceId);
-    if (isRealUuidSpace) {
-      const supabase = await this.getClient();
-      if (supabase) {
-        try {
-          const { data, error } = await supabase.rpc('check_space_availability', {
-            p_space_id: spaceId,
-            p_start_time: startTime,
-            p_end_time: endTime,
-          });
+  async isSpaceAvailable(spaceId: string, startTime: string, endTime: string, customerId?: string): Promise<boolean> {
+    const validSpaceId = ensureValidUuid(spaceId);
+    const space = await this.getSpaceById(spaceId);
+    const candidateSpaceIds = [validSpaceId];
+    if (space?.id) {
+      const spcIdUuid = ensureValidUuid(space.id);
+      if (!candidateSpaceIds.includes(spcIdUuid)) candidateSpaceIds.push(spcIdUuid);
+    }
+    if (space?.space_public_id) {
+      const pubUuid = ensureValidUuid(space.space_public_id);
+      if (!candidateSpaceIds.includes(pubUuid)) candidateSpaceIds.push(pubUuid);
+    }
 
-          if (!error && typeof data === 'boolean') {
-            return data;
+    const supabase = await this.getClient();
+
+    if (supabase) {
+      try {
+        const reqStartMs = new Date(startTime).getTime();
+        const reqEndMs = new Date(endTime).getTime();
+        const now = Date.now();
+
+        // 1. Check PostgreSQL bookings table for overlapping active or confirmed bookings
+        const { data: dbBookings, error: bErr } = await supabase
+          .from('bookings')
+          .select('id, start_time, end_time, status, customer_id, created_at')
+          .in('space_id', candidateSpaceIds)
+          .in('status', ['confirmed', 'active', 'hold_pending']);
+
+        if (!bErr && dbBookings && dbBookings.length > 0) {
+          for (const b of dbBookings) {
+            if (customerId && b.customer_id === customerId && b.status === 'hold_pending') {
+              continue;
+            }
+            if (b.status === 'hold_pending') {
+              const createdAtMs = new Date(b.created_at).getTime();
+              if (now - createdAtMs > 10 * 60 * 1000) {
+                continue; // Expired hold
+              }
+            }
+            const bStartMs = new Date(b.start_time).getTime();
+            const bEndMs = new Date(b.end_time).getTime();
+            if (reqStartMs < bEndMs && reqEndMs > bStartMs) {
+              return false; // Conflicting reservation in database!
+            }
           }
-        } catch (e) {
-          console.warn('[Repository] check_space_availability error:', e);
         }
+
+        // 2. Check PostgreSQL booking_holds table
+        const { data: dbHolds, error: hErr } = await supabase
+          .from('booking_holds')
+          .select('id, start_time, end_time, customer_id, expires_at, is_active')
+          .in('space_id', candidateSpaceIds)
+          .eq('is_active', true);
+
+        if (!hErr && dbHolds && dbHolds.length > 0) {
+          for (const h of dbHolds) {
+            if (customerId && h.customer_id === customerId) continue;
+            const expiresMs = new Date(h.expires_at).getTime();
+            if (expiresMs > now) {
+              const hStartMs = new Date(h.start_time).getTime();
+              const hEndMs = new Date(h.end_time).getTime();
+              if (reqStartMs < hEndMs && reqEndMs > hStartMs) {
+                return false; // Active hold in database!
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[Repository] isSpaceAvailable DB check notice:', e);
       }
     }
-    return getLocalStore().checkAvailability(spaceId, startTime, endTime);
+
+    // Mirror check with local store
+    return getLocalStore().checkAvailability(spaceId, startTime, endTime, customerId);
   }
 
   calculatePricing(space: ParkingSpace, startTime: string, endTime: string) {
